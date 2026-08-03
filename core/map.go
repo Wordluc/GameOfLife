@@ -2,7 +2,7 @@ package core
 
 import (
 	"GameOfLife/common"
-	"fmt"
+	"errors"
 )
 
 type Map struct {
@@ -26,7 +26,6 @@ func (m *Map) FeedMap(newCell func(x, y int32) ICell) {
 }
 
 func (m *Map) SetRawCell(c ICell, pos common.Vec[int32]) error {
-	fmt.Printf("%v\n", pos)
 	p := pos.X + (pos.Y * m.size.X)
 	m.cells[p] = c
 	return nil
@@ -42,14 +41,11 @@ func (m *Map) SetCells(newCell func(x, y int32) ICell, pos, size common.Vec[int3
 	return nil
 }
 
-func (m *Map) GetCellInfo(pos, size common.Vec[int32]) (res []CellType, err error) {
-	for iy := range size.Y {
-		for ix := range size.X {
-			p := (pos.X + (ix - size.X/2) + (pos.Y+(iy-size.Y/2))*m.size.X)
-			res = append(res, m.cells[p].GetType())
-		}
+func (m *Map) GetCell(pos common.Vec[int32]) (res ICell, err error) {
+	if pos.X < 0 || pos.Y < 0 {
+		return nil, errors.New("Error getting cell")
 	}
-	return res, err
+	return m.cells[pos.X+pos.Y*m.size.X], nil
 }
 
 func (m *Map) ForEach(f func(x, y int32, cell ICell) error) (err error) {
