@@ -15,7 +15,7 @@ type RaylibRender struct {
 	PeopleSeed int8
 }
 
-func (r *RaylibRender) DrawCell(x, y int32, c core.ICell) error {
+func (r *RaylibRender) DrawCell(x, y int32, c *core.BaseCell) error {
 	var color rl.Color
 	switch c.GetType() {
 	case core.GRASS:
@@ -36,7 +36,7 @@ func (r *RaylibRender) DrawCell(x, y int32, c core.ICell) error {
 	return nil
 }
 
-func (r *RaylibRender) TickPeopleSeed() {
+func (r *RaylibRender) TickPeopleAnimation() {
 	r.PeopleSeed = int8(time.Now().Unix())
 }
 
@@ -45,7 +45,7 @@ func drawPeopleDots(x, y, w, h, people int32, seed int8) {
 		return
 	}
 	rand := rand.New(rand.NewSource(int64(int32(seed) * x * y)))
-	for range people/10 + 1 {
+	for range people {
 		xOffset, yOffset := rand.Int31n(w-3), rand.Int31n(h-3)
 		rl.DrawRectangle(xOffset+x, yOffset+y, 3, 3, rl.Black)
 	}
