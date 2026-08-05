@@ -32,7 +32,7 @@ func main() {
 		if rl.IsKeyPressed(rl.KeyF) {
 			p := rl.GetMousePosition()
 			c, _ := w.Map.GetCell(common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL})
-			c.SetPeopleNumber(c.GetPeopleNumber() + 1)
+			c.AppendPerson(w.NewPerson(core.GRASS))
 			c.Touch()
 		}
 		if rl.IsKeyPressed(rl.KeyH) {
@@ -46,7 +46,7 @@ func main() {
 		if rl.IsKeyPressed(rl.KeyP) {
 			cells, _ := w.GetCellBlock(core.HOUSE)
 			for i := range cells {
-				cells[i].SetPeopleNumber(cells[i].GetPeopleNumber() + 1)
+				cells[i].AppendPerson(w.NewPerson(core.GRASS))
 			}
 		}
 
@@ -67,10 +67,12 @@ func main() {
 			if c.IsTouch() {
 				return nil
 			}
-			c.SetPeopleNumber(c.GetPeopleNumber() + 1)
-			c.Touch()
-			origin.SetPeopleNumber(origin.GetPeopleNumber() - 1)
-			origin.Touch()
+			p := origin.PopPerson(func(p core.Person) bool { return true })
+			if p != nil {
+				origin.Touch()
+				c.AppendPerson(p)
+				c.Touch()
+			}
 			return nil
 		})
 

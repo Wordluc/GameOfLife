@@ -1,8 +1,10 @@
 package core
 
-import "fmt"
-
-import "errors"
+import (
+	"errors"
+	"fmt"
+	"slices"
+)
 
 type CellType int
 
@@ -14,36 +16,59 @@ const (
 
 type BaseCell struct {
 	blockType CellType
-	people    int32
+	people    []*Person
 	other     any
 	touch     int
 }
 
-func (b *BaseCell) Touch() {
-	b.touch = TOUCH_ID
+func (BaseCell *BaseCell) Touch() {
+	BaseCell.touch = TOUCH_ID
 }
 
-func (b *BaseCell) IsTouch() bool {
-	return b.touch == TOUCH_ID
+func (BaseCell *BaseCell) IsTouch() bool {
+	return BaseCell.touch == TOUCH_ID
 }
 
-func (b *BaseCell) SetType(t CellType) {
-	b.blockType = t
+func (BaseCell *BaseCell) SetType(t CellType) {
+	BaseCell.blockType = t
 }
 
-func (b *BaseCell) GetType() CellType {
-	return b.blockType
+func (BaseCell *BaseCell) GetType() CellType {
+	return BaseCell.blockType
 }
 
-func (b *BaseCell) GetPeopleNumber() int32 {
-	return b.people
+func (BaseCell *BaseCell) GetPeopleNumber() int {
+	return len(BaseCell.people)
 }
 
-func (b *BaseCell) SetPeopleNumber(n int32) {
-	if n < 0 {
-		return
+func (BaseCell *BaseCell) AppendPerson(p *Person) error {
+	if p.id == 0 {
+		return errors.New("Wrong Id")
+
 	}
-	b.people = n
+	p.position = BaseCell
+	BaseCell.people = append(BaseCell.people, p)
+	return nil
+}
+
+func (BaseCell *BaseCell) GetPeople(check func(p Person) bool) (res []*Person) {
+	for i := range BaseCell.people {
+		if check(*BaseCell.people[i]) {
+			res = append(res, BaseCell.people[i])
+		}
+	}
+	return res
+}
+
+func (BaseCell *BaseCell) PopPerson(check func(p Person) bool) *Person {
+	for i := range BaseCell.people {
+		if check(*BaseCell.people[i]) {
+			BaseCell.people = slices.Delete(BaseCell.people, i, i+1)
+			BaseCell.people[i].position = nil
+			return BaseCell.people[i]
+		}
+	}
+	return nil
 }
 
 type CellDefinition struct {

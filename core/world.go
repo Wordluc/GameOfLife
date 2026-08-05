@@ -8,10 +8,12 @@ import (
 )
 
 var TOUCH_ID int
+var ID_PEOPLE int
 
 type World struct {
 	Map       Map
 	cellBlock map[CellType][]*BaseCell
+	people    []*Person
 }
 
 func NewWorld(size common.Vec[int32]) (w World) {
@@ -24,6 +26,21 @@ func (w *World) GenerateMap() {
 	w.Map.FeedMap(func(x, y int32) *BaseCell {
 		return new(NewGrassCell())
 	})
+}
+
+func (w *World) GetPeople(check func(p Person) bool) (res []*Person) {
+	for i := range w.people {
+		if check(*w.people[i]) {
+			res = append(res, w.people[i])
+		}
+	}
+	return res
+}
+
+func (w *World) NewPerson(job Job) *Person {
+	p := new(newPerson(job))
+	w.people = append(w.people, p)
+	return p
 }
 
 func (w *World) GetCellBlock(cellType CellType) ([]*BaseCell, error) {

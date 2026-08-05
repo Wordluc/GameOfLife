@@ -40,12 +40,12 @@ func (r *RaylibRender) TickPeopleAnimation() {
 	r.PeopleSeed = int8(time.Now().Unix())
 }
 
-func drawPeopleDots(x, y, w, h, people int32, seed int8) {
+func drawPeopleDots(x, y, w, h int32, people int, seed int8) {
 	if people <= 0 {
 		return
 	}
 	rand := rand.New(rand.NewSource(int64(int32(seed) * x * y)))
-	for range people {
+	for range people/10 + 1 {
 		xOffset, yOffset := rand.Int31n(w-3), rand.Int31n(h-3)
 		rl.DrawRectangle(xOffset+x, yOffset+y, 3, 3, rl.Black)
 	}
