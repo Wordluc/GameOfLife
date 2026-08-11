@@ -19,7 +19,8 @@ func main() {
 	mapSize := common.Vec[int32]{X: 50, Y: 50}
 	w := core.NewWorld(mapSize)
 	rl.InitWindow(mapSize.X*SIZE_CELL, mapSize.Y*SIZE_CELL, "ciao")
-	w.Map.FeedMap(func(x, y int32) *core.BaseCell { return new(core.NewGrassCell()) })
+	w.Map.FeedMap(func(x, y int32) *core.BaseCell { return new(core.NewGrassCell(common.NewVec(x, y))) })
+	var timer float32 = 0.0
 	for !rl.WindowShouldClose() {
 		core.TOUCH_ID = rand.Int()
 		rl.ClearBackground(rl.White)
@@ -32,7 +33,7 @@ func main() {
 		if rl.IsKeyPressed(rl.KeyF) {
 			p := rl.GetMousePosition()
 			c, _ := w.Map.GetCell(common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL})
-			c.AppendPerson(w.NewPerson(core.GRASS))
+			w.NewPerson(core.GRASS, c)
 			c.Touch()
 		}
 		if rl.IsKeyPressed(rl.KeyH) {
@@ -46,35 +47,13 @@ func main() {
 		if rl.IsKeyPressed(rl.KeyP) {
 			cells, _ := w.GetCellBlock(core.HOUSE)
 			for i := range cells {
-				cells[i].AppendPerson(w.NewPerson(core.GRASS))
+				w.NewPerson(core.GRASS, cells[i])
 			}
 		}
-
-		w.Map.ForEach(func(x, y int32, cell *core.BaseCell) error {
-			origin, _ := w.Map.GetCell(common.Vec[int32]{X: x, Y: y})
-			if origin.IsTouch() {
-				return nil
-			}
-			if origin.GetPeopleNumber() < 2 {
-				return nil
-			}
-			xOffset, yOffset := rand.Int31n(3), rand.Int31n(3)
-			newP := common.Vec[int32]{X: x + xOffset - 1, Y: y + yOffset - 1}
-			c, err := w.Map.GetCell(newP)
-			if err != nil {
-				return err
-			}
-			if c.IsTouch() {
-				return nil
-			}
-			p := origin.PopPerson(func(p core.Person) bool { return true })
-			if p != nil {
-				origin.Touch()
-				c.AppendPerson(p)
-				c.Touch()
-			}
-			return nil
-		})
-
+		timer += rl.GetFrameTime()
+		if timer >= 2.0 {
+			w.MovementSimulation()
+			timer -= 2.0 // or timer = 0, but -= preserves overshoot accuracy
+		}
 	}
 }

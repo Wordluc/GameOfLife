@@ -27,6 +27,7 @@ func (m *Map) FeedMap(newCell func(x, y int32) *BaseCell) {
 
 func (m *Map) SetRawCell(c *BaseCell, pos common.Vec[int32]) error {
 	p := pos.X + (pos.Y * m.size.X)
+	c.position = common.Vec[int32]{X: pos.X, Y: pos.Y}
 	m.cells[p] = c
 	return nil
 }

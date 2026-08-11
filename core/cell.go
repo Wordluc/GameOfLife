@@ -1,6 +1,7 @@
 package core
 
 import (
+	"GameOfLife/common"
 	"errors"
 	"fmt"
 	"slices"
@@ -19,6 +20,7 @@ type BaseCell struct {
 	people    []*Person
 	other     any
 	touch     int
+	position  common.Vec[int32]
 }
 
 func (BaseCell *BaseCell) Touch() {
@@ -46,7 +48,7 @@ func (BaseCell *BaseCell) AppendPerson(p *Person) error {
 		return errors.New("Wrong Id")
 
 	}
-	p.position = BaseCell
+	p.currentCell = BaseCell
 	BaseCell.people = append(BaseCell.people, p)
 	return nil
 }
@@ -60,19 +62,20 @@ func (BaseCell *BaseCell) GetPeople(check func(p Person) bool) (res []*Person) {
 	return res
 }
 
-func (BaseCell *BaseCell) PopPerson(check func(p Person) bool) *Person {
+func (BaseCell *BaseCell) PopPerson(check func(p Person) bool) (p *Person) {
 	for i := range BaseCell.people {
 		if check(*BaseCell.people[i]) {
+			p = BaseCell.people[i]
+			BaseCell.people[i].currentCell = nil
 			BaseCell.people = slices.Delete(BaseCell.people, i, i+1)
-			BaseCell.people[i].position = nil
-			return BaseCell.people[i]
+			return p
 		}
 	}
 	return nil
 }
 
 type CellDefinition struct {
-	Construtor func() BaseCell
+	Construtor func(common.Vec[int32]) BaseCell
 	WhereCan   []CellType
 }
 
@@ -97,23 +100,26 @@ func GetCellDefinition(t CellType) (CellDefinition, error) {
 	return definition, nil
 }
 
-func NewGrassCell() BaseCell {
+func NewGrassCell(pos common.Vec[int32]) BaseCell {
 	return BaseCell{
 		blockType: GRASS,
 		touch:     TOUCH_ID,
+		position:  pos,
 	}
 }
 
-func NewStoneCell() BaseCell {
+func NewStoneCell(pos common.Vec[int32]) BaseCell {
 	return BaseCell{
 		blockType: STONE,
 		touch:     TOUCH_ID,
+		position:  pos,
 	}
 }
 
-func NewHouseCell() BaseCell {
+func NewHouseCell(pos common.Vec[int32]) BaseCell {
 	return BaseCell{
 		blockType: HOUSE,
 		touch:     TOUCH_ID,
+		position:  pos,
 	}
 }
