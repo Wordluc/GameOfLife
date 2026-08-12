@@ -4,7 +4,6 @@ import (
 	"GameOfLife/common"
 	"errors"
 	"fmt"
-	"math/rand"
 	"slices"
 )
 
@@ -43,6 +42,7 @@ func (w *World) NewPerson(job Job, cell *BaseCell) *Person {
 	p := new(newPerson(job))
 	cell.AppendPerson(p)
 	w.people = append(w.people, p)
+	PerformPathFindig(w, p.currentCell.position, common.Vec[int32]{X: 20, Y: 20})
 	return p
 }
 
@@ -101,24 +101,28 @@ func (w *World) MovementSimulation() error {
 			peopleByJob[person.Job] = append(peopleByJob[person.Job], w.people[i])
 		}
 	}
-	var cell *BaseCell
-	for _, people := range peopleByJob {
-		for _, person := range people {
-			xOffset, yOffset := rand.Int31n(3), rand.Int31n(3)
-			cell = person.currentCell
-			newP := common.Vec[int32]{X: cell.position.X + xOffset - 1, Y: cell.position.Y + yOffset - 1}
-			newCell, err := w.Map.GetCell(newP)
-			if err != nil {
-				continue
-			}
-			t := cell.PopPerson(func(p Person) bool { return p.id == person.id })
-			if t != nil {
-				person.Touch()
-				newCell.AppendPerson(t)
-			}
-
-		}
-
-	}
+	//	for _, people := range peopleByJob {
+	//		for _, person := range people {
+	////			paths := PerformPathFindig(w, person.currentCell.position, common.Vec[int32]{X: 20, Y: 20})
+	////			if len(paths) != 0 {
+	////				fmt.Printf("%v\n", paths)
+	////			}
+	//			return nil
+	//			//	xOffset, yOffset := rand.Int31n(3), rand.Int31n(3)
+	//			//	cell = person.currentCell
+	//			//	newP := common.Vec[int32]{X: cell.position.X + xOffset - 1, Y: cell.position.Y + yOffset - 1}
+	//			//	newCell, err := w.Map.GetCell(newP)
+	//			//	if err != nil {
+	//			//		continue
+	//			//	}
+	//			//	t := cell.PopPerson(func(p Person) bool { return p.id == person.id })
+	//			//	if t != nil {
+	//			//		person.Touch()
+	//			//		newCell.AppendPerson(t)
+	//			//	}
+	//
+	//		}
+	//
+	//	}
 	return nil
 }

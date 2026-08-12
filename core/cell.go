@@ -13,6 +13,7 @@ const (
 	GRASS = iota
 	STONE
 	HOUSE
+	DEBUG
 )
 
 type BaseCell struct {
