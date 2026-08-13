@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"sync"
 )
 
 var TOUCH_ID int
@@ -41,9 +42,28 @@ func (w *World) GetPeople(check func(p Person) bool) (res []*Person) {
 func (w *World) NewPerson(job Job, cell *BaseCell) *Person {
 	p := new(newPerson(job))
 	cell.AppendPerson(p)
+	p.paths = new(common.NewQueue(PerformPathFindig(w, p.currentCell.position, common.Vec[int32]{X: 20, Y: 20})))
 	w.people = append(w.people, p)
-	PerformPathFindig(w, p.currentCell.position, common.Vec[int32]{X: 20, Y: 20})
 	return p
+}
+
+func (w *World) followPath(person *Person) error {
+	from := person.paths.GetBack(1)
+	if from != nil && !from.IsEqual(person.currentCell.position) {
+		return errors.New("Error initial position")
+	}
+	newPos, end := person.paths.Denqueue()
+	if end {
+		return nil
+	}
+	person.currentCell.PopPerson(func(p Person) bool {
+		return p.id == person.id
+	})
+	newCell, err := w.Map.GetCell(newPos)
+	if err != nil {
+		return err
+	}
+	return newCell.AppendPerson(person)
 }
 
 func (w *World) GetCellBlock(cellType CellType) ([]*BaseCell, error) {
@@ -79,13 +99,21 @@ func (w *World) AddBlock(cellType CellType, pos common.Vec[int32], size common.V
 		}
 	}
 	for pos := range neighborhood {
-		cell := new(definition.Construtor(pos))
+		cell := new(definition.Constructor(pos))
 		err = w.Map.SetRawCell(cell, pos)
 		if err != nil {
 			return err
 		}
 		w.cellBlock[cellType] = append(w.cellBlock[cellType], cell)
 	}
+
+	var wait sync.WaitGroup
+	for i := range w.people {
+		wait.Go(func() {
+			w.people[i].paths = new(common.NewQueue(PerformPathFindig(w, w.people[i].currentCell.position, common.Vec[int32]{X: 20, Y: 20})))
+		})
+	}
+	wait.Wait()
 	return nil
 }
 
@@ -101,28 +129,15 @@ func (w *World) MovementSimulation() error {
 			peopleByJob[person.Job] = append(peopleByJob[person.Job], w.people[i])
 		}
 	}
-	//	for _, people := range peopleByJob {
-	//		for _, person := range people {
-	////			paths := PerformPathFindig(w, person.currentCell.position, common.Vec[int32]{X: 20, Y: 20})
-	////			if len(paths) != 0 {
-	////				fmt.Printf("%v\n", paths)
-	////			}
-	//			return nil
-	//			//	xOffset, yOffset := rand.Int31n(3), rand.Int31n(3)
-	//			//	cell = person.currentCell
-	//			//	newP := common.Vec[int32]{X: cell.position.X + xOffset - 1, Y: cell.position.Y + yOffset - 1}
-	//			//	newCell, err := w.Map.GetCell(newP)
-	//			//	if err != nil {
-	//			//		continue
-	//			//	}
-	//			//	t := cell.PopPerson(func(p Person) bool { return p.id == person.id })
-	//			//	if t != nil {
-	//			//		person.Touch()
-	//			//		newCell.AppendPerson(t)
-	//			//	}
-	//
-	//		}
-	//
-	//	}
+	var err error
+	for _, people := range peopleByJob {
+		for _, person := range people {
+			err = w.followPath(person)
+			if err != nil {
+				return err
+			}
+		}
+
+	}
 	return nil
 }

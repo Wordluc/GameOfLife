@@ -20,11 +20,13 @@ func (p *pathFindigInformation) retriavePath() (res []common.Vec[int32]) {
 	t = p
 	for {
 		if t == nil {
+			slices.Reverse(res)
 			return res
 		}
 		res = append(res, t.pos)
 		t = t.origin
 	}
+
 }
 func Search(s []*pathFindigInformation, a common.Vec[int32]) int {
 	for i := range s {
@@ -95,6 +97,11 @@ func PerformPathFindig(w *World, start, goal common.Vec[int32]) []common.Vec[int
 	discoverNeighboardhood := func(origin pathFindigInformation) func(x, y int32) {
 		return func(x, y int32) {
 			pos := common.Vec[int32]{X: x, Y: y}
+			if c, err := w.Map.GetCell(pos); err == nil {
+				if c.blockType == STONE {
+					return
+				}
+			}
 
 			weightFromStart := origin.weightFromStart + 1
 			weightToGoal := fromAtoB(pos, goal)
@@ -138,12 +145,7 @@ func PerformPathFindig(w *World, start, goal common.Vec[int32]) []common.Vec[int
 		visit++
 
 		if explored.pos.IsEqual(goal) {
-			println("visited: ", visit)
-			paths := explored.retriavePath()
-			for i := range paths {
-				drawDebugCell(paths[i], rl.White)
-			}
-			return paths
+			return explored.retriavePath()
 		}
 		//		if slices.ContainsFunc(toDiscover, func(a *pathFindigInformation) bool {
 		//			if a.pos.IsEqual(goal) {

@@ -76,20 +76,20 @@ func (BaseCell *BaseCell) PopPerson(check func(p Person) bool) (p *Person) {
 }
 
 type CellDefinition struct {
-	Construtor func(common.Vec[int32]) BaseCell
-	WhereCan   []CellType
+	Constructor func(common.Vec[int32]) BaseCell
+	WhereCan    []CellType
 }
 
 var cellsDefinition map[CellType]CellDefinition = map[CellType]CellDefinition{
 	GRASS: {
-		Construtor: NewGrassCell,
+		Constructor: NewGrassCell,
 	},
 	STONE: {
-		Construtor: NewStoneCell,
+		Constructor: NewStoneCell,
 	},
 	HOUSE: {
-		Construtor: NewHouseCell,
-		WhereCan:   []CellType{GRASS},
+		Constructor: NewHouseCell,
+		WhereCan:    []CellType{GRASS},
 	},
 }
 

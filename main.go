@@ -38,7 +38,7 @@ func main() {
 		}
 		if rl.IsKeyPressed(rl.KeyH) {
 			p := rl.GetMousePosition()
-			w.AddBlock(core.HOUSE, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 5, Y: 3})
+			w.AddBlock(core.HOUSE, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 1, Y: 1})
 		}
 		if rl.IsKeyPressed(rl.KeyR) {
 			p := rl.GetMousePosition()
@@ -51,9 +51,12 @@ func main() {
 			}
 		}
 		timer += rl.GetFrameTime()
-		if timer >= 2.0 {
-			w.MovementSimulation()
-			timer -= 2.0 // or timer = 0, but -= preserves overshoot accuracy
+		if timer >= 0.5 {
+			err := w.MovementSimulation()
+			if err != nil {
+				panic(err)
+			}
+			timer = 0 // or timer = 0, but -= preserves overshoot accuracy
 		}
 	}
 }

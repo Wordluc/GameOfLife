@@ -1,5 +1,7 @@
 package core
 
+import "GameOfLife/common"
+
 type Job int8
 
 const (
@@ -12,6 +14,7 @@ type Person struct {
 	Job         Job
 	currentCell *BaseCell
 	touch       int
+	paths       *common.Queue[common.Vec[int32]]
 }
 
 func newPerson(job Job) Person {
