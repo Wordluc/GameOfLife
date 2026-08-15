@@ -35,6 +35,16 @@ func (v *Vec[t]) SetXY(a Vec[t]) {
 	v.Y = a.Y
 }
 
+func (v *Vec[t]) Abs() *Vec[t] {
+	if v.X < 0 {
+		v.X = -v.X
+	}
+	if v.Y < 0 {
+		v.Y = -v.Y
+	}
+	return v
+}
+
 func (v *Vec[t]) CapAt(a Vec[t]) *Vec[t] {
 	if v.X > 0 && v.X > a.X {
 		v.X = a.X
@@ -125,6 +135,19 @@ func (v *Vec[t]) SubScalars(x, y t) *Vec[t] {
 
 func FromAtoBVec[t Number](a, b Vec[t]) Vec[t] {
 	return Vec[t]{X: b.X - a.X, Y: b.Y - a.Y}
+}
+
+func DistanceAtoBVecByEuclidean[t Number](a, b Vec[t]) t {
+	return a.Clone().Sub(b).Magnitude()
+}
+
+func DistanceAtoBVecShev[t Number](a, b Vec[t]) t {
+	diff := a.Clone().Sub(b)
+	diff = diff.Abs()
+	if diff.X < diff.Y {
+		return diff.Y
+	}
+	return diff.X
 }
 
 func (v Vec[t]) Normal() Vec[t] {

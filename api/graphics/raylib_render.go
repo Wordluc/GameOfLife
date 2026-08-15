@@ -24,6 +24,10 @@ func (r *RaylibRender) DrawCell(x, y int32, c *core.BaseCell) error {
 		color = rl.Gray
 	case core.HOUSE:
 		color = rl.Brown
+	case core.WHEAT:
+		color = rl.Yellow
+	case core.MINE:
+		color = rl.Black
 	case core.DEBUG:
 		color = rl.White
 	default:

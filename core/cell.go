@@ -13,6 +13,8 @@ const (
 	GRASS = iota
 	STONE
 	HOUSE
+	WHEAT
+	MINE
 	DEBUG
 )
 
@@ -21,7 +23,13 @@ type BaseCell struct {
 	people    []*Person
 	other     any
 	touch     int
-	position  common.Vec[int32]
+	pos       common.Vec[int32]
+}
+
+func NewEmptyBaseCell(pos common.Vec[int32]) *BaseCell {
+	return &BaseCell{
+		pos: pos,
+	}
 }
 
 func (BaseCell *BaseCell) Touch() {
@@ -63,7 +71,19 @@ func (BaseCell *BaseCell) GetPeople(check func(p Person) bool) (res []*Person) {
 	return res
 }
 
-func (BaseCell *BaseCell) PopPerson(check func(p Person) bool) (p *Person) {
+func (BaseCell *BaseCell) PopPerson(id int) (p *Person, err error) {
+	for i := range BaseCell.people {
+		if BaseCell.people[i].id == id {
+			p = BaseCell.people[i]
+			BaseCell.people[i].currentCell = nil
+			BaseCell.people = slices.Delete(BaseCell.people, i, i+1)
+			return p, nil
+		}
+	}
+	return nil, fmt.Errorf("PopPerson: Id not found %v", id)
+}
+
+func (BaseCell *BaseCell) PopPersonf(check func(p Person) bool) (p *Person) {
 	for i := range BaseCell.people {
 		if check(*BaseCell.people[i]) {
 			p = BaseCell.people[i]
@@ -76,20 +96,29 @@ func (BaseCell *BaseCell) PopPerson(check func(p Person) bool) (p *Person) {
 }
 
 type CellDefinition struct {
-	Constructor func(common.Vec[int32]) BaseCell
-	WhereCan    []CellType
+	convert  func(*BaseCell) error
+	WhereCan []CellType
 }
 
 var cellsDefinition map[CellType]CellDefinition = map[CellType]CellDefinition{
 	GRASS: {
-		Constructor: NewGrassCell,
+		convert: ConvertToGrassCell,
 	},
 	STONE: {
-		Constructor: NewStoneCell,
+		convert:  ConvertToStoneCell,
+		WhereCan: []CellType{GRASS},
 	},
 	HOUSE: {
-		Constructor: NewHouseCell,
-		WhereCan:    []CellType{GRASS},
+		convert:  ConvertToHouseCell,
+		WhereCan: []CellType{GRASS},
+	},
+	WHEAT: {
+		convert:  ConvertToWheatCell,
+		WhereCan: []CellType{GRASS},
+	},
+	MINE: {
+		convert:  ConvertToMineCell,
+		WhereCan: []CellType{STONE},
 	},
 }
 
@@ -101,26 +130,30 @@ func GetCellDefinition(t CellType) (CellDefinition, error) {
 	return definition, nil
 }
 
-func NewGrassCell(pos common.Vec[int32]) BaseCell {
-	return BaseCell{
-		blockType: GRASS,
-		touch:     TOUCH_ID,
-		position:  pos,
-	}
+func ConvertToGrassCell(c *BaseCell) error {
+	c.blockType = GRASS
+	c.touch = TOUCH_ID
+	return nil
 }
 
-func NewStoneCell(pos common.Vec[int32]) BaseCell {
-	return BaseCell{
-		blockType: STONE,
-		touch:     TOUCH_ID,
-		position:  pos,
-	}
+func ConvertToStoneCell(c *BaseCell) error {
+	c.blockType = STONE
+	c.touch = TOUCH_ID
+	return nil
 }
 
-func NewHouseCell(pos common.Vec[int32]) BaseCell {
-	return BaseCell{
-		blockType: HOUSE,
-		touch:     TOUCH_ID,
-		position:  pos,
-	}
+func ConvertToHouseCell(c *BaseCell) error {
+	c.blockType = HOUSE
+	c.touch = TOUCH_ID
+	return nil
+}
+func ConvertToWheatCell(c *BaseCell) error {
+	c.blockType = WHEAT
+	c.touch = TOUCH_ID
+	return nil
+}
+func ConvertToMineCell(c *BaseCell) error {
+	c.blockType = MINE
+	c.touch = TOUCH_ID
+	return nil
 }

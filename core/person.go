@@ -9,6 +9,11 @@ const (
 	MINER
 )
 
+var JobToCell = map[Job]CellType{
+	FARMER: WHEAT,
+	MINER:  MINE,
+}
+
 type Person struct {
 	id          int
 	Job         Job

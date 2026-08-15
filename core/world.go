@@ -4,6 +4,7 @@ import (
 	"GameOfLife/common"
 	"errors"
 	"fmt"
+	"math"
 	"slices"
 	"sync"
 )
@@ -13,20 +14,20 @@ var ID_PEOPLE int = 1
 
 type World struct {
 	Map       Map
-	cellBlock map[CellType][]*BaseCell
+	cellBlock map[CellType]map[common.Vec[int32]]*BaseCell
 	people    []*Person
 	resources map[string]int
 }
 
 func NewWorld(size common.Vec[int32]) (w World) {
 	w.Map = NewMap(size)
-	w.cellBlock = map[CellType][]*BaseCell{}
+	w.cellBlock = map[CellType]map[common.Vec[int32]]*BaseCell{}
 	return w
 }
 
 func (w *World) GenerateMap() {
-	w.Map.FeedMap(func(x, y int32) *BaseCell {
-		return new(NewGrassCell(common.Vec[int32]{X: x, Y: y}))
+	w.Map.ForeachCell(func(x, y int32) *BaseCell {
+		return NewEmptyBaseCell(common.Vec[int32]{X: x, Y: y})
 	})
 }
 
@@ -42,23 +43,54 @@ func (w *World) GetPeople(check func(p Person) bool) (res []*Person) {
 func (w *World) NewPerson(job Job, cell *BaseCell) *Person {
 	p := new(newPerson(job))
 	cell.AppendPerson(p)
-	p.paths = new(common.NewQueue(PerformPathFindig(w, p.currentCell.position, common.Vec[int32]{X: 20, Y: 20})))
+	w.setWhereToGo(p)
 	w.people = append(w.people, p)
 	return p
 }
 
+func (w *World) setWhereToGo(person ...*Person) {
+	getMinDistant := func(personPos common.Vec[int32], cells map[common.Vec[int32]]*BaseCell) (cell *BaseCell) {
+		var min int32 = math.MaxInt32
+		cell = nil
+		for pos := range cells {
+			if min > common.DistanceAtoBVecShev(personPos, pos) {
+
+				cell = cells[pos]
+			}
+		}
+		return cell
+	}
+	var wait sync.WaitGroup
+	for i := range person {
+		wait.Go(func() {
+			cellsToGo := w.cellBlock[JobToCell[person[i].Job]]
+			goal := getMinDistant(person[i].currentCell.pos, cellsToGo)
+			if goal == nil {
+				return
+			}
+
+			person[i].paths = new(common.NewQueue(PerformPathFindig(w, person[i].currentCell.pos, goal.pos)))
+		})
+	}
+	wait.Wait()
+}
+
 func (w *World) followPath(person *Person) error {
+	if person.paths == nil {
+		return nil
+	}
 	from := person.paths.GetBack(1)
-	if from != nil && !from.IsEqual(person.currentCell.position) {
+	if from != nil && !from.IsEqual(person.currentCell.pos) {
 		return errors.New("Error initial position")
 	}
 	newPos, end := person.paths.Denqueue()
 	if end {
 		return nil
 	}
-	person.currentCell.PopPerson(func(p Person) bool {
-		return p.id == person.id
-	})
+	_, err := person.currentCell.PopPerson(person.id)
+	if err != nil {
+		return err
+	}
 	newCell, err := w.Map.GetCell(newPos)
 	if err != nil {
 		return err
@@ -66,8 +98,11 @@ func (w *World) followPath(person *Person) error {
 	return newCell.AppendPerson(person)
 }
 
-func (w *World) GetCellBlock(cellType CellType) ([]*BaseCell, error) {
-	return slices.Clone(w.cellBlock[cellType]), nil
+func (w *World) GetCellBlock(cellType CellType) (res []*BaseCell, err error) {
+	for _, r := range w.cellBlock[cellType] {
+		res = append(res, r)
+	}
+	return res, err
 }
 
 func (w *World) AddBlock(cellType CellType, pos common.Vec[int32], size common.Vec[int32]) error {
@@ -94,26 +129,25 @@ func (w *World) AddBlock(cellType CellType, pos common.Vec[int32], size common.V
 	if definition.WhereCan != nil {
 		for _, n := range neighborhood {
 			if !slices.Contains(definition.WhereCan, n.GetType()) {
-				return fmt.Errorf("House not support in %v", neighborhood[pos].GetType())
+				fmt.Printf("%v not support in %v\n", cellType, neighborhood[pos].GetType())
+				return nil
 			}
 		}
 	}
 	for pos := range neighborhood {
-		cell := new(definition.Constructor(pos))
-		err = w.Map.SetRawCell(cell, pos)
+		cell, err := w.Map.GetCell(pos)
 		if err != nil {
 			return err
 		}
-		w.cellBlock[cellType] = append(w.cellBlock[cellType], cell)
+		delete(w.cellBlock[cell.blockType], pos)
+		definition.convert(cell)
+		if w.cellBlock[cellType] == nil {
+			w.cellBlock[cellType] = make(map[common.Vec[int32]]*BaseCell)
+		}
+		w.cellBlock[cellType][pos] = cell
 	}
 
-	var wait sync.WaitGroup
-	for i := range w.people {
-		wait.Go(func() {
-			w.people[i].paths = new(common.NewQueue(PerformPathFindig(w, w.people[i].currentCell.position, common.Vec[int32]{X: 20, Y: 20})))
-		})
-	}
-	wait.Wait()
+	w.setWhereToGo(w.people...)
 	return nil
 }
 
@@ -132,8 +166,7 @@ func (w *World) MovementSimulation() error {
 	var err error
 	for _, people := range peopleByJob {
 		for _, person := range people {
-			err = w.followPath(person)
-			if err != nil {
+			if w.followPath(person) != nil {
 				return err
 			}
 		}

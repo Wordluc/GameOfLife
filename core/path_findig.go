@@ -57,7 +57,7 @@ func InsertSorted(s []*pathFindigInformation, e *pathFindigInformation) []*pathF
 }
 
 func fromAtoB(a, b common.Vec[int32]) int32 {
-	return common.FromAtoBVec(a, b).Magnitude()
+	return common.DistanceAtoBVecShev(a, b)
 }
 
 func foreachNeighboarhood(m *Map, pos common.Vec[int32], callback func(x, y int32)) {

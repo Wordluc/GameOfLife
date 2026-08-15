@@ -17,7 +17,7 @@ func NewMap(size common.Vec[int32]) Map {
 	}
 }
 
-func (m *Map) FeedMap(newCell func(x, y int32) *BaseCell) {
+func (m *Map) ForeachCell(newCell func(x, y int32) *BaseCell) {
 	var i int32
 	for range m.cells {
 		m.cells[i] = newCell(i%m.size.X, i/m.size.X)
@@ -27,7 +27,7 @@ func (m *Map) FeedMap(newCell func(x, y int32) *BaseCell) {
 
 func (m *Map) SetRawCell(c *BaseCell, pos common.Vec[int32]) error {
 	p := pos.X + (pos.Y * m.size.X)
-	c.position = common.Vec[int32]{X: pos.X, Y: pos.Y}
+	c.pos = common.Vec[int32]{X: pos.X, Y: pos.Y}
 	m.cells[p] = c
 	return nil
 }
