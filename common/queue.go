@@ -15,6 +15,10 @@ func NewQueue[t any](values []t) Queue[t] {
 	}
 }
 
+func (q *Queue[t]) Len() int {
+	return len(q.values)
+}
+
 func (q *Queue[t]) Reset() {
 	q.index = 0
 	q.values = q.values[:0]

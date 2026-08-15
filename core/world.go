@@ -49,27 +49,29 @@ func (w *World) NewPerson(job Job, cell *BaseCell) *Person {
 }
 
 func (w *World) setWhereToGo(person ...*Person) {
-	getMinDistant := func(personPos common.Vec[int32], cells map[common.Vec[int32]]*BaseCell) (cell *BaseCell) {
-		var min int32 = math.MaxInt32
-		cell = nil
+	getMinPath := func(personPos common.Vec[int32], cells map[common.Vec[int32]]*BaseCell) (goal *BaseCell, pathToGoal common.Queue[common.Vec[int32]]) {
+		var path common.Queue[common.Vec[int32]]
+		var minPath int = math.MaxInt
 		for pos := range cells {
-			if min > common.DistanceAtoBVecShev(personPos, pos) {
-
-				cell = cells[pos]
+			path = common.NewQueue(PerformPathFindig(w, personPos, pos))
+			if minPath > path.Len() {
+				minPath = path.Len()
+				pathToGoal = path
+				goal = cells[pos]
 			}
 		}
-		return cell
+		return goal, pathToGoal
 	}
 	var wait sync.WaitGroup
 	for i := range person {
 		wait.Go(func() {
 			cellsToGo := w.cellBlock[JobToCell[person[i].Job]]
-			goal := getMinDistant(person[i].currentCell.pos, cellsToGo)
+			goal, path := getMinPath(person[i].currentCell.pos, cellsToGo)
 			if goal == nil {
 				return
 			}
 
-			person[i].paths = new(common.NewQueue(PerformPathFindig(w, person[i].currentCell.pos, goal.pos)))
+			person[i].paths = new(path)
 		})
 	}
 	wait.Wait()
