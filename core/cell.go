@@ -13,8 +13,11 @@ const (
 	GRASS = iota
 	STONE
 	HOUSE
-	WHEAT
+	WHEAT_FIELD
 	MINE
+	FOREST
+	WATER
+	DOCK
 	DEBUG
 )
 
@@ -98,8 +101,9 @@ func (BaseCell *BaseCell) PopPersonf(check func(p Person) bool) (p *Person) {
 }
 
 type CellDefinition struct {
-	convert  func(*BaseCell) error
-	WhereCan []CellType
+	convert    func(*BaseCell) error
+	WhereCan   []CellType
+	ExtraCheck func(pos common.Vec[int32], m *Map) (okToConvert bool)
 }
 
 var cellsDefinition map[CellType]CellDefinition = map[CellType]CellDefinition{
@@ -114,13 +118,35 @@ var cellsDefinition map[CellType]CellDefinition = map[CellType]CellDefinition{
 		convert:  ConvertToHouseCell,
 		WhereCan: []CellType{GRASS, HOUSE},
 	},
-	WHEAT: {
+	WHEAT_FIELD: {
 		convert:  ConvertToWheatCell,
-		WhereCan: []CellType{GRASS, WHEAT},
+		WhereCan: []CellType{GRASS, WHEAT_FIELD},
 	},
 	MINE: {
 		convert:  ConvertToMineCell,
 		WhereCan: []CellType{STONE, MINE},
+	},
+	FOREST: {
+		convert:  ConvertToForestCell,
+		WhereCan: []CellType{FOREST, GRASS, WHEAT_FIELD},
+	},
+	WATER: {
+		convert: ConvertToWaterCell,
+	},
+	DOCK: {
+		convert:  ConvertToDockCell,
+		WhereCan: []CellType{WATER},
+		ExtraCheck: func(pos common.Vec[int32], m *Map) (okToConvert bool) {
+			neir, _ := m.GetNeighborhoodCells(pos, common.Vec[int32]{X: 3, Y: 3})
+			for _, typeCell := range neir {
+				if slices.ContainsFunc([]CellType{DOCK, GRASS}, func(a CellType) bool {
+					return a == typeCell.blockType
+				}) {
+					return true
+				}
+			}
+			return false
+		},
 	},
 }
 
@@ -150,13 +176,30 @@ func ConvertToHouseCell(c *BaseCell) error {
 	return nil
 }
 func ConvertToWheatCell(c *BaseCell) error {
-	c.blockType = WHEAT
+	c.blockType = WHEAT_FIELD
 	c.touch = TOUCH_ID
 	c.maxNPopulation = 10
 	return nil
 }
 func ConvertToMineCell(c *BaseCell) error {
 	c.blockType = MINE
+	c.touch = TOUCH_ID
+	c.maxNPopulation = 10
+	return nil
+}
+func ConvertToForestCell(c *BaseCell) error {
+	c.blockType = FOREST
+	c.touch = TOUCH_ID
+	c.maxNPopulation = 10
+	return nil
+}
+func ConvertToWaterCell(c *BaseCell) error {
+	c.blockType = WATER
+	c.touch = TOUCH_ID
+	return nil
+}
+func ConvertToDockCell(c *BaseCell) error {
+	c.blockType = DOCK
 	c.touch = TOUCH_ID
 	c.maxNPopulation = 10
 	return nil

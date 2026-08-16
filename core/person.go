@@ -7,11 +7,15 @@ type Job int8
 const (
 	FARMER Job = iota
 	MINER
+	WOODCUTTER
+	FISHERMAN
 )
 
-var JobToCell = map[Job]CellType{
-	FARMER: WHEAT,
-	MINER:  MINE,
+var JobToCell = map[Job][]CellType{
+	FARMER:     {WHEAT_FIELD},
+	MINER:      {MINE, STONE},
+	WOODCUTTER: {FOREST},
+	FISHERMAN:  {DOCK},
 }
 
 type Person struct {

@@ -21,7 +21,7 @@ func main() {
 	rl.InitWindow(mapSize.X*SIZE_CELL, mapSize.Y*SIZE_CELL, "ciao")
 	w.GenerateMap()
 	var timer float32 = 0.0
-	currentJob := 0
+	var currentJob core.Job = core.FARMER
 	for !rl.WindowShouldClose() {
 		core.TOUCH_ID = rand.Int()
 		rl.ClearBackground(rl.White)
@@ -31,15 +31,10 @@ func main() {
 			return render.DrawCell(x, y, cell)
 		})
 		rl.EndDrawing()
-		if rl.IsKeyPressed(rl.KeyF) {
+
+		if rl.IsKeyPressed(rl.KeyG) {
 			p := rl.GetMousePosition()
-			c, _ := w.Map.GetCell(common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL})
-			w.NewPerson(core.GRASS, c)
-			c.Touch()
-		}
-		if rl.IsKeyPressed(rl.KeyQ) {
-			p := rl.GetMousePosition()
-			err := w.AddBlock(core.WHEAT, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 1, Y: 1})
+			err := w.AddBlock(core.WHEAT_FIELD, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 1, Y: 1})
 			if err != nil {
 				println(err.Error())
 			}
@@ -58,6 +53,13 @@ func main() {
 				println(err.Error())
 			}
 		}
+		if rl.IsKeyPressed(rl.KeyF) {
+			p := rl.GetMousePosition()
+			err := w.AddBlock(core.FOREST, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 1, Y: 1})
+			if err != nil {
+				println(err.Error())
+			}
+		}
 		if rl.IsKeyPressed(rl.KeyR) {
 			p := rl.GetMousePosition()
 			err := w.AddBlock(core.STONE, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 5, Y: 5})
@@ -65,13 +67,35 @@ func main() {
 				println(err.Error())
 			}
 		}
+		if rl.IsKeyPressed(rl.KeyW) {
+			p := rl.GetMousePosition()
+			err := w.AddBlock(core.WATER, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 3, Y: 3})
+			if err != nil {
+				println(err.Error())
+			}
+		}
+		if rl.IsKeyPressed(rl.KeyD) {
+			p := rl.GetMousePosition()
+			err := w.AddBlock(core.DOCK, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 1, Y: 1})
+			if err != nil {
+				println(err.Error())
+			}
+		}
 		if rl.IsKeyPressed(rl.KeyZero) {
-			currentJob = int(core.FARMER)
+			currentJob = core.FARMER
 			println("Farmer")
 		}
 		if rl.IsKeyPressed(rl.KeyOne) {
-			currentJob = int(core.MINER)
+			currentJob = core.MINER
 			println("Miner")
+		}
+		if rl.IsKeyPressed(rl.KeyTwo) {
+			currentJob = core.WOODCUTTER
+			println("Forest")
+		}
+		if rl.IsKeyPressed(rl.KeyThree) {
+			currentJob = core.FISHERMAN
+			println("Fischerman")
 		}
 		if rl.IsKeyPressed(rl.KeyP) {
 			cells, _ := w.GetCellBlock(core.HOUSE)

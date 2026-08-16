@@ -48,7 +48,7 @@ func (w *World) NewPerson(job Job, cell *BaseCell) *Person {
 }
 
 func (w *World) setWhereToGo(person ...*Person) {
-	getMinPath := func(person *Person, cells map[common.Vec[int32]]*BaseCell) (goal *BaseCell, pathToGoal *common.Queue[common.Vec[int32]]) {
+	getMinPath := func(person *Person, cells map[common.Vec[int32]]*BaseCell) (goal *BaseCell, pathToGoal *common.Queue[common.Vec[int32]], found bool) {
 		var path *common.Queue[common.Vec[int32]]
 		var minPath int = math.MaxInt
 		var oldGoalPos common.Vec[int32]
@@ -75,19 +75,30 @@ func (w *World) setWhereToGo(person ...*Person) {
 			}
 		}
 		if goal == nil {
-			return nil, nil
+			return nil, nil, false
 		}
 		goal.VirtualNPopulation++
 		if goal.pos.IsEqual(oldGoalPos) {
-			return nil, nil
+			return nil, nil, true
 
 		}
 		person.paths = pathToGoal
-		return goal, pathToGoal
+		return goal, pathToGoal, true
 	}
-	for i := range person {
-		cellsToGo := w.cellBlock[JobToCell[person[i].Job]]
-		getMinPath(person[i], cellsToGo)
+	for iPerson := range person {
+		var i int
+		toGo := JobToCell[person[iPerson].Job]
+		for {
+			cellsToGo := w.cellBlock[toGo[i]]
+			_, _, found := getMinPath(person[iPerson], cellsToGo)
+			if found {
+				break
+			}
+			i++
+			if i >= len(toGo) {
+				break
+			}
+		}
 
 	}
 }
@@ -112,6 +123,7 @@ func (w *World) followPath(person *Person) error {
 	if err != nil {
 		return err
 	}
+	person.Touch()
 	return newCell.AppendPerson(person)
 }
 
@@ -146,8 +158,13 @@ func (w *World) AddBlock(cellType CellType, pos common.Vec[int32], size common.V
 	if definition.WhereCan != nil {
 		for _, n := range neighborhood {
 			if !slices.Contains(definition.WhereCan, n.GetType()) {
-				return fmt.Errorf("%v not support in %v\n", cellType, neighborhood[pos].GetType())
+				return fmt.Errorf("%v not support in %v", cellType, neighborhood[pos].GetType())
 			}
+		}
+	}
+	if definition.ExtraCheck != nil {
+		if !definition.ExtraCheck(pos, w.Map) {
+			return fmt.Errorf("ExtraCheck %v failed", cellType)
 		}
 	}
 	for pos := range neighborhood {

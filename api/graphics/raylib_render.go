@@ -24,11 +24,17 @@ func (r *RaylibRender) DrawCell(x, y int32, c *core.BaseCell) error {
 	case core.STONE:
 		color = rl.Gray
 	case core.HOUSE:
-		color = rl.Brown
-	case core.WHEAT:
+		color = rl.Blue
+	case core.WHEAT_FIELD:
 		color = rl.Yellow
 	case core.MINE:
 		color = rl.Black
+	case core.FOREST:
+		color = rl.Brown
+	case core.WATER:
+		color = rl.DarkBlue
+	case core.DOCK:
+		color = rl.DarkBrown
 	case core.DEBUG:
 		color = rl.White
 	default:

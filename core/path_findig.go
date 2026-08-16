@@ -98,12 +98,15 @@ func PerformPathFindig(m *Map, start, goal common.Vec[int32]) []common.Vec[int32
 		return func(x, y int32) {
 			pos := common.Vec[int32]{X: x, Y: y}
 			if c, err := m.GetCell(pos); err == nil {
-				if c.blockType == STONE {
+				if slices.Contains([]CellType{WATER}, c.blockType) {
 					return
 				}
 			}
 
-			weightFromStart := origin.weightFromStart + 1
+			weightFromStart := origin.weightFromStart + 2
+			if !slices.Contains([]float32{0, 90, 180, 270, 360}, pos.Clone().Sub(goal).Angle()) {
+				weightFromStart += 1
+			}
 			weightToGoal := fromAtoB(pos, goal)
 			if _, ok := discovered[pos]; ok {
 				return
