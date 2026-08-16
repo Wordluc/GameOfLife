@@ -9,14 +9,14 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-var SIZE_CELL int32 = 20
+var SIZE_CELL int32 = 30
 
 func main() {
 	var render graphics.Render = new(graphics.RaylibRender{
 		SizeCell: common.Vec[int32]{X: SIZE_CELL, Y: SIZE_CELL},
 	})
 
-	mapSize := common.Vec[int32]{X: 50, Y: 30}
+	mapSize := common.Vec[int32]{X: 40, Y: 25}
 	w := core.NewWorld(mapSize)
 	rl.InitWindow(mapSize.X*SIZE_CELL, mapSize.Y*SIZE_CELL, "ciao")
 	w.GenerateMap()
@@ -39,30 +39,30 @@ func main() {
 		}
 		if rl.IsKeyPressed(rl.KeyQ) {
 			p := rl.GetMousePosition()
-			err := w.AddBlock(core.WHEAT, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 3, Y: 3})
+			err := w.AddBlock(core.WHEAT, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 1, Y: 1})
 			if err != nil {
-				panic(err)
+				println(err.Error())
 			}
 		}
 		if rl.IsKeyPressed(rl.KeyM) {
 			p := rl.GetMousePosition()
 			err := w.AddBlock(core.MINE, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 1, Y: 1})
 			if err != nil {
-				panic(err)
+				println(err.Error())
 			}
 		}
 		if rl.IsKeyPressed(rl.KeyH) {
 			p := rl.GetMousePosition()
 			err := w.AddBlock(core.HOUSE, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 1, Y: 1})
 			if err != nil {
-				panic(err)
+				println(err.Error())
 			}
 		}
 		if rl.IsKeyPressed(rl.KeyR) {
 			p := rl.GetMousePosition()
 			err := w.AddBlock(core.STONE, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 5, Y: 5})
 			if err != nil {
-				panic(err)
+				println(err.Error())
 			}
 		}
 		if rl.IsKeyPressed(rl.KeyZero) {
@@ -85,7 +85,7 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-			timer = 0 // or timer = 0, but -= preserves overshoot accuracy
+			timer -= 0.5 // or timer = 0, but -= preserves overshoot accuracy
 		}
 	}
 }

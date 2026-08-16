@@ -19,11 +19,13 @@ const (
 )
 
 type BaseCell struct {
-	blockType CellType
-	people    []*Person
-	other     any
-	touch     int
-	pos       common.Vec[int32]
+	blockType          CellType
+	people             []*Person
+	maxNPopulation     int
+	VirtualNPopulation int
+	other              any
+	touch              int
+	pos                common.Vec[int32]
 }
 
 func NewEmptyBaseCell(pos common.Vec[int32]) *BaseCell {
@@ -106,19 +108,19 @@ var cellsDefinition map[CellType]CellDefinition = map[CellType]CellDefinition{
 	},
 	STONE: {
 		convert:  ConvertToStoneCell,
-		WhereCan: []CellType{GRASS},
+		WhereCan: []CellType{GRASS, STONE},
 	},
 	HOUSE: {
 		convert:  ConvertToHouseCell,
-		WhereCan: []CellType{GRASS},
+		WhereCan: []CellType{GRASS, HOUSE},
 	},
 	WHEAT: {
 		convert:  ConvertToWheatCell,
-		WhereCan: []CellType{GRASS},
+		WhereCan: []CellType{GRASS, WHEAT},
 	},
 	MINE: {
 		convert:  ConvertToMineCell,
-		WhereCan: []CellType{STONE},
+		WhereCan: []CellType{STONE, MINE},
 	},
 }
 
@@ -150,10 +152,12 @@ func ConvertToHouseCell(c *BaseCell) error {
 func ConvertToWheatCell(c *BaseCell) error {
 	c.blockType = WHEAT
 	c.touch = TOUCH_ID
+	c.maxNPopulation = 10
 	return nil
 }
 func ConvertToMineCell(c *BaseCell) error {
 	c.blockType = MINE
 	c.touch = TOUCH_ID
+	c.maxNPopulation = 10
 	return nil
 }

@@ -9,8 +9,11 @@ type Queue[t any] struct {
 	index  int
 }
 
-func NewQueue[t any](values []t) Queue[t] {
-	return Queue[t]{
+func NewQueue[t any](values []t) *Queue[t] {
+	if values == nil {
+		return nil
+	}
+	return &Queue[t]{
 		values: slices.Clone(values),
 	}
 }
@@ -43,4 +46,8 @@ func (q *Queue[t]) GetBack(by int) (value *t) {
 		return
 	}
 	return new(q.values[i])
+}
+
+func (q *Queue[t]) GetLast() (value *t) {
+	return new(q.values[len(q.values)-1])
 }

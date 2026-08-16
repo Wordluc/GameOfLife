@@ -6,21 +6,20 @@ import (
 	"fmt"
 	"math"
 	"slices"
-	"sync"
 )
 
 var TOUCH_ID int
 var ID_PEOPLE int = 1
 
 type World struct {
-	Map       Map
+	Map       *Map
 	cellBlock map[CellType]map[common.Vec[int32]]*BaseCell
 	people    []*Person
 	resources map[string]int
 }
 
 func NewWorld(size common.Vec[int32]) (w World) {
-	w.Map = NewMap(size)
+	w.Map = new(NewMap(size))
 	w.cellBlock = map[CellType]map[common.Vec[int32]]*BaseCell{}
 	return w
 }
@@ -49,32 +48,48 @@ func (w *World) NewPerson(job Job, cell *BaseCell) *Person {
 }
 
 func (w *World) setWhereToGo(person ...*Person) {
-	getMinPath := func(personPos common.Vec[int32], cells map[common.Vec[int32]]*BaseCell) (goal *BaseCell, pathToGoal common.Queue[common.Vec[int32]]) {
-		var path common.Queue[common.Vec[int32]]
+	getMinPath := func(person *Person, cells map[common.Vec[int32]]*BaseCell) (goal *BaseCell, pathToGoal *common.Queue[common.Vec[int32]]) {
+		var path *common.Queue[common.Vec[int32]]
 		var minPath int = math.MaxInt
+		var oldGoalPos common.Vec[int32]
+		if person.paths != nil {
+			oldGoal, _ := w.Map.GetCell(*person.paths.GetLast())
+			oldGoal.VirtualNPopulation--
+			oldGoalPos = oldGoal.pos
+			if oldGoal.VirtualNPopulation < 0 {
+				oldGoal.VirtualNPopulation = 0
+			}
+		}
 		for pos := range cells {
-			path = common.NewQueue(PerformPathFindig(w, personPos, pos))
+			if cells[pos].maxNPopulation != 0 && cells[pos].maxNPopulation < cells[pos].VirtualNPopulation+1 {
+				continue
+			}
+			path = common.NewQueue(PerformPathFindig(w.Map, person.currentCell.pos, pos))
+			if path == nil {
+				continue
+			}
 			if minPath > path.Len() {
 				minPath = path.Len()
 				pathToGoal = path
 				goal = cells[pos]
 			}
 		}
+		if goal == nil {
+			return nil, nil
+		}
+		goal.VirtualNPopulation++
+		if goal.pos.IsEqual(oldGoalPos) {
+			return nil, nil
+
+		}
+		person.paths = pathToGoal
 		return goal, pathToGoal
 	}
-	var wait sync.WaitGroup
 	for i := range person {
-		wait.Go(func() {
-			cellsToGo := w.cellBlock[JobToCell[person[i].Job]]
-			goal, path := getMinPath(person[i].currentCell.pos, cellsToGo)
-			if goal == nil {
-				return
-			}
+		cellsToGo := w.cellBlock[JobToCell[person[i].Job]]
+		getMinPath(person[i], cellsToGo)
 
-			person[i].paths = new(path)
-		})
 	}
-	wait.Wait()
 }
 
 func (w *World) followPath(person *Person) error {
@@ -131,8 +146,7 @@ func (w *World) AddBlock(cellType CellType, pos common.Vec[int32], size common.V
 	if definition.WhereCan != nil {
 		for _, n := range neighborhood {
 			if !slices.Contains(definition.WhereCan, n.GetType()) {
-				fmt.Printf("%v not support in %v\n", cellType, neighborhood[pos].GetType())
-				return nil
+				return fmt.Errorf("%v not support in %v\n", cellType, neighborhood[pos].GetType())
 			}
 		}
 	}

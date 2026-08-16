@@ -88,7 +88,7 @@ func drawDebugCell(pos common.Vec[int32], c rl.Color) {
 	rl.EndDrawing()
 }
 
-func PerformPathFindig(w *World, start, goal common.Vec[int32]) []common.Vec[int32] {
+func PerformPathFindig(m *Map, start, goal common.Vec[int32]) []common.Vec[int32] {
 	var discovered map[common.Vec[int32]]*pathFindigInformation = make(map[common.Vec[int32]]*pathFindigInformation)
 	var toDiscover []*pathFindigInformation = make([]*pathFindigInformation, 0)
 	startingOrigin := pathFindigInformation{
@@ -97,7 +97,7 @@ func PerformPathFindig(w *World, start, goal common.Vec[int32]) []common.Vec[int
 	discoverNeighboardhood := func(origin pathFindigInformation) func(x, y int32) {
 		return func(x, y int32) {
 			pos := common.Vec[int32]{X: x, Y: y}
-			if c, err := w.Map.GetCell(pos); err == nil {
+			if c, err := m.GetCell(pos); err == nil {
 				if c.blockType == STONE {
 					return
 				}
@@ -134,7 +134,7 @@ func PerformPathFindig(w *World, start, goal common.Vec[int32]) []common.Vec[int
 			})
 		}
 	}
-	foreachNeighboarhood(&w.Map, start, discoverNeighboardhood(startingOrigin))
+	foreachNeighboarhood(m, start, discoverNeighboardhood(startingOrigin))
 	visit := 0
 	for {
 		if len(toDiscover) == 0 {
@@ -147,18 +147,8 @@ func PerformPathFindig(w *World, start, goal common.Vec[int32]) []common.Vec[int
 		if explored.pos.IsEqual(goal) {
 			return explored.retriavePath()
 		}
-		//		if slices.ContainsFunc(toDiscover, func(a *pathFindigInformation) bool {
-		//			if a.pos.IsEqual(goal) {
-		//				explored = a
-		//				return true
-		//			}
-		//			return false
-		//		}) {
-		//			println("visited: ", visit)
-		//			return explored.retriavePath()
-		//		}
 		discovered[explored.pos] = explored
-		foreachNeighboarhood(&w.Map, explored.pos, discoverNeighboardhood(*explored))
+		foreachNeighboarhood(m, explored.pos, discoverNeighboardhood(*explored))
 
 	}
 
