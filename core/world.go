@@ -15,12 +15,13 @@ type World struct {
 	Map       *Map
 	cellBlock map[CellType]map[common.Vec[int32]]*BaseCell
 	people    []*Person
-	resources map[string]int
+	resources map[Resource]float32
 }
 
 func NewWorld(size common.Vec[int32]) (w World) {
 	w.Map = new(NewMap(size))
 	w.cellBlock = map[CellType]map[common.Vec[int32]]*BaseCell{}
+	w.resources = map[Resource]float32{}
 	return w
 }
 
@@ -131,11 +132,11 @@ func (w *World) followPath(person *Person) error {
 	return newCell.AppendPerson(person)
 }
 
-func (w *World) GetCellBlock(cellType CellType) (res []*BaseCell, err error) {
+func (w *World) GetCellBlock(cellType CellType) (res []*BaseCell) {
 	for _, r := range w.cellBlock[cellType] {
 		res = append(res, r)
 	}
-	return res, err
+	return res
 }
 
 func (w *World) AddBlock(cellType CellType, pos common.Vec[int32], size common.Vec[int32]) error {
@@ -208,6 +209,21 @@ func (w *World) MovementSimulation() error {
 			}
 		}
 
+	}
+	return nil
+}
+
+func (w *World) ResourcesCounting() error {
+	countPeople := func(cells map[common.Vec[int32]]*BaseCell) (r int) {
+		for i := range cells {
+			r += cells[i].GetPeopleNumber()
+		}
+		return r
+	}
+	for celltype, cells := range w.cellBlock {
+		for _, r := range CellToResource[celltype] {
+			w.resources[r.What] += float32(countPeople(cells)) * r.Amount
+		}
 	}
 	return nil
 }

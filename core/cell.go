@@ -7,18 +7,18 @@ import (
 	"slices"
 )
 
-type CellType int
+type CellType string
 
 const (
-	GRASS = iota
-	STONE
-	HOUSE
-	WHEAT_FIELD
-	MINE
-	FOREST
-	WATER
-	DOCK
-	DEBUG
+	GRASS       = "GRASS"
+	STONE       = "STONE"
+	HOUSE       = "HOUSE"
+	WHEAT_FIELD = "WHEAT_FIELD"
+	MINE        = "MINE"
+	FOREST      = "FOREST"
+	WATER       = "WATER"
+	DOCK        = "DOCK"
+	DEBUG       = "DEBUG"
 )
 
 type BaseCell struct {
@@ -33,7 +33,8 @@ type BaseCell struct {
 
 func NewEmptyBaseCell(pos common.Vec[int32]) *BaseCell {
 	return &BaseCell{
-		pos: pos,
+		pos:       pos,
+		blockType: GRASS,
 	}
 }
 

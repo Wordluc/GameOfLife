@@ -1,14 +1,23 @@
 package core
 
-type Resource int8
+import "GameOfLife/common"
+
+type Resource string
 
 const (
-	FOOD Resource = iota
-	IRON
+	FOOD = "FOOD"
+	IRON = "IRON"
+	WOOD = "WOOD"
 )
 
-var JobToResource map[Job][]Resource = map[Job][]Resource{
-	FARMER: {FOOD},
-	MINER:  {IRON},
-	DOCK:   {FOOD},
+type Quantity[t any, q common.Number] struct {
+	What   t
+	Amount q
+}
+
+var CellToResource map[CellType][]Quantity[Resource, float32] = map[CellType][]Quantity[Resource, float32]{
+	WHEAT_FIELD: {{FOOD, 0.5}},
+	DOCK:        {{FOOD, 1}},
+	MINE:        {{IRON, 0.5}},
+	FOREST:      {{WOOD, 1}},
 }

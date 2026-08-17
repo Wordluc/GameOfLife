@@ -2,18 +2,18 @@ package core
 
 import "GameOfLife/common"
 
-type Job int8
+type Job string
 
 const (
-	FARMER Job = iota
-	MINER
-	WOODCUTTER
-	FISHERMAN
+	FARMER     = "FARMER"
+	MINER      = "MINER"
+	WOODCUTTER = "WOODCUTTER"
+	FISHERMAN  = "FISHERMAN"
 )
 
 var JobToCell = map[Job][]CellType{
 	FARMER:     {WHEAT_FIELD},
-	MINER:      {MINE, STONE},
+	MINER:      {MINE},
 	WOODCUTTER: {FOREST},
 	FISHERMAN:  {DOCK},
 }
