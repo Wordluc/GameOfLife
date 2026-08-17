@@ -87,10 +87,11 @@ func (w *World) setWhereToGo(person ...*Person) {
 	}
 	for iPerson := range person {
 		var i int
+		found := false
 		toGo := JobToCell[person[iPerson].Job]
 		for {
 			cellsToGo := w.cellBlock[toGo[i]]
-			_, _, found := getMinPath(person[iPerson], cellsToGo)
+			_, _, found = getMinPath(person[iPerson], cellsToGo)
 			if found {
 				break
 			}
@@ -98,6 +99,9 @@ func (w *World) setWhereToGo(person ...*Person) {
 			if i >= len(toGo) {
 				break
 			}
+		}
+		if !found {
+			person[iPerson].paths = nil
 		}
 
 	}
