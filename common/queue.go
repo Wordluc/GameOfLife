@@ -51,3 +51,9 @@ func (q *Queue[t]) GetBack(by int) (value *t) {
 func (q *Queue[t]) GetLast() (value *t) {
 	return new(q.values[len(q.values)-1])
 }
+
+func (q *Queue[t]) Clone() *Queue[t] {
+	return &Queue[t]{
+		values: slices.Clone(q.values),
+	}
+}

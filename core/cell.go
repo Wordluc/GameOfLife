@@ -139,7 +139,11 @@ var cellsDefinition map[CellType]CellDefinition = map[CellType]CellDefinition{
 		WhereCan: []CellType{WATER},
 		ExtraCheck: func(pos common.Vec[int32], m *Map) (okToConvert bool) {
 			neir, _ := m.GetNeighborhoodCells(pos, common.Vec[int32]{X: 3, Y: 3})
-			for _, typeCell := range neir {
+			for c, typeCell := range neir {
+				diff := c.Sub(pos)
+				if diff.X != 0 && diff.Y != 0 {
+					continue
+				}
 				if slices.ContainsFunc([]CellType{DOCK, GRASS}, func(a CellType) bool {
 					return a == typeCell.blockType
 				}) {

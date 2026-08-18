@@ -24,6 +24,7 @@ type Person struct {
 	currentCell *BaseCell
 	touch       int
 	paths       *common.Queue[common.Vec[int32]]
+	isWorking   bool
 }
 
 func newPerson(job Job) Person {

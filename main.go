@@ -4,6 +4,7 @@ import (
 	"GameOfLife/api/graphics"
 	"GameOfLife/common"
 	"GameOfLife/core"
+	"fmt"
 	"math/rand"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -22,6 +23,7 @@ func main() {
 	w.GenerateMap()
 	var timer float32 = 0.0
 	var currentJob core.Job = core.FARMER
+	rl.SetTargetFPS(60)
 	for !rl.WindowShouldClose() {
 		core.TOUCH_ID = rand.Int()
 		rl.ClearBackground(rl.White)
@@ -108,6 +110,7 @@ func main() {
 		}
 		timer += rl.GetFrameTime()
 		if timer >= 0.5 {
+			w.PerformPathFinding()
 			w.ResourcesCounting()
 			err := w.MovementSimulation()
 			if err != nil {
@@ -115,5 +118,9 @@ func main() {
 			}
 			timer -= 0.5 // or timer = 0, but -= preserves overshoot accuracy
 		}
+		if 1/rl.GetFrameTime() < 50 {
+			fmt.Printf("fps:%v people:%v\n", 1/rl.GetFrameTime(), len(w.GetPeople(func(p core.Person) bool { return true })))
+		}
+
 	}
 }

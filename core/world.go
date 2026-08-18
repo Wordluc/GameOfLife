@@ -12,10 +12,11 @@ var TOUCH_ID int
 var ID_PEOPLE int = 1
 
 type World struct {
-	Map       *Map
-	cellBlock map[CellType]map[common.Vec[int32]]*BaseCell
-	people    []*Person
-	resources map[Resource]float32
+	Map              *Map
+	cellBlock        map[CellType]map[common.Vec[int32]]*BaseCell
+	people           []*Person
+	resources        map[Resource]float32
+	toRunPathFinding bool
 }
 
 func NewWorld(size common.Vec[int32]) (w World) {
@@ -49,6 +50,7 @@ func (w *World) NewPerson(job Job, cell *BaseCell) *Person {
 }
 
 func (w *World) setWhereToGo(person ...*Person) {
+	var cachePath map[common.Vec[int32]]map[common.Vec[int32]]*common.Queue[common.Vec[int32]] = map[common.Vec[int32]]map[common.Vec[int32]]*common.Queue[common.Vec[int32]]{}
 	getMinPath := func(person *Person, cells map[common.Vec[int32]]*BaseCell) (goal *BaseCell, pathToGoal *common.Queue[common.Vec[int32]], found bool) {
 		var path *common.Queue[common.Vec[int32]]
 		var minPath int = math.MaxInt
@@ -65,9 +67,14 @@ func (w *World) setWhereToGo(person ...*Person) {
 			if cells[pos].maxNPopulation != 0 && cells[pos].maxNPopulation < cells[pos].VirtualNPopulation+1 {
 				continue
 			}
-			path = common.NewQueue(PerformPathFindig(w.Map, person.currentCell.pos, pos))
-			if path == nil {
-				continue
+			if cachePath[person.currentCell.pos] != nil && cachePath[person.currentCell.pos][pos] != nil {
+				path = cachePath[person.currentCell.pos][pos].Clone()
+			} else {
+				path = common.NewQueue(PerformPathFindig(w.Map, person.currentCell.pos, pos))
+				if cachePath[person.currentCell.pos] == nil {
+					cachePath[person.currentCell.pos] = map[common.Vec[int32]]*common.Queue[common.Vec[int32]]{}
+				}
+				cachePath[person.currentCell.pos][pos] = path.Clone()
 			}
 			if minPath > path.Len() {
 				minPath = path.Len()
@@ -184,9 +191,16 @@ func (w *World) AddBlock(cellType CellType, pos common.Vec[int32], size common.V
 		}
 		w.cellBlock[cellType][pos] = cell
 	}
-
-	w.setWhereToGo(w.people...)
+	w.toRunPathFinding = true
 	return nil
+}
+
+func (w *World) PerformPathFinding() {
+	if !w.toRunPathFinding {
+		return
+	}
+	w.setWhereToGo(w.people...)
+	w.toRunPathFinding = false
 }
 
 func (w *World) MovementSimulation() error {
