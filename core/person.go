@@ -11,26 +11,30 @@ const (
 	FISHERMAN  = "FISHERMAN"
 )
 
-var JobToCell = map[Job][]CellType{
-	FARMER:     {WHEAT_FIELD},
-	MINER:      {MINE},
-	WOODCUTTER: {FOREST},
-	FISHERMAN:  {DOCK},
-}
+type Status string
+
+const (
+	WORKING = "WORKING"
+	MOVING  = "MOVING"
+	DEAD    = "DEAD"
+	STOP    = "STOP"
+)
 
 type Person struct {
 	id          int
+	idOrigin    int
 	Job         Job
 	currentCell *BaseCell
 	touch       int
 	paths       *common.Queue[common.Vec[int32]]
-	isWorking   bool
+	Status      Status
 }
 
-func newPerson(job Job) Person {
+func newPerson(job Job, idOrigin int) Person {
 	p := Person{
-		id:  ID_PEOPLE,
-		Job: job,
+		id:       ID_PEOPLE,
+		Job:      job,
+		idOrigin: idOrigin,
 	}
 	ID_PEOPLE++
 	return p

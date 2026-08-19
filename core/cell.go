@@ -54,14 +54,9 @@ func (BaseCell *BaseCell) GetType() CellType {
 	return BaseCell.blockType
 }
 
-func (BaseCell *BaseCell) GetPeopleNumber() int {
-	return len(BaseCell.people)
-}
-
 func (BaseCell *BaseCell) AppendPerson(p *Person) error {
 	if p.id == 0 {
 		return errors.New("Wrong Id")
-
 	}
 	p.currentCell = BaseCell
 	BaseCell.people = append(BaseCell.people, p)
@@ -69,6 +64,9 @@ func (BaseCell *BaseCell) AppendPerson(p *Person) error {
 }
 
 func (BaseCell *BaseCell) GetPeople(check func(p Person) bool) (res []*Person) {
+	if check == nil {
+		check = func(p Person) bool { return true }
+	}
 	for i := range BaseCell.people {
 		if check(*BaseCell.people[i]) {
 			res = append(res, BaseCell.people[i])

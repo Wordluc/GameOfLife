@@ -43,18 +43,18 @@ func (m *Map) GetNeighborhoodCells(pos common.Vec[int32], size common.Vec[int32]
 	halfY := size.Y / 2
 
 	res = make(map[common.Vec[int32]]*BaseCell, size.X*size.Y)
-	for iy := range size.Y {
-		for ix := range size.X {
-			worldX := pos.X + (ix - halfX)
-			worldY := pos.Y + (iy - halfY)
+	var worldX, worldY, idx int32
+	for ix := range size.X {
+		for iy := range size.Y {
+			worldX = pos.X + (ix - halfX)
+			worldY = pos.Y + (iy - halfY)
 
 			if worldX < 0 || worldY < 0 || worldX >= m.size.X || worldY >= m.size.Y {
 				continue
 			}
 
-			idx := worldX + worldY*m.size.X
-			pos := common.Vec[int32]{X: worldX, Y: worldY}
-			res[pos] = m.cells[idx]
+			idx = worldX + worldY*m.size.X
+			res[common.Vec[int32]{X: worldX, Y: worldY}] = m.cells[idx]
 		}
 	}
 	return res, nil

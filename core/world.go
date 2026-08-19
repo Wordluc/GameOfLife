@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/rand"
 	"slices"
 )
 
@@ -17,12 +18,15 @@ type World struct {
 	people           []*Person
 	resources        map[Resource]float32
 	toRunPathFinding bool
+	Id               int
 }
 
 func NewWorld(size common.Vec[int32]) (w World) {
 	w.Map = new(NewMap(size))
 	w.cellBlock = map[CellType]map[common.Vec[int32]]*BaseCell{}
-	w.resources = map[Resource]float32{}
+	w.resources = map[Resource]float32{
+		FOOD: 1000,
+	}
 	return w
 }
 
@@ -41,8 +45,8 @@ func (w *World) GetPeople(check func(p Person) bool) (res []*Person) {
 	return res
 }
 
-func (w *World) NewPerson(job Job, cell *BaseCell) *Person {
-	p := new(newPerson(job))
+func (w *World) NewPerson(job Job, cell *BaseCell, idOrigin int) *Person {
+	p := new(newPerson(job, idOrigin))
 	cell.AppendPerson(p)
 	w.setWhereToGo(p)
 	w.people = append(w.people, p)
@@ -96,7 +100,7 @@ func (w *World) setWhereToGo(person ...*Person) {
 	for iPerson := range person {
 		var i int
 		found := false
-		toGo := JobToCell[person[iPerson].Job]
+		toGo := JobToCells[person[iPerson].Job]
 		for {
 			cellsToGo := w.cellBlock[toGo[i]]
 			_, _, found = getMinPath(person[iPerson], cellsToGo)
@@ -110,6 +114,9 @@ func (w *World) setWhereToGo(person ...*Person) {
 		}
 		if !found {
 			person[iPerson].paths = nil
+			person[iPerson].Status = STOP
+		} else {
+			person[iPerson].Status = MOVING
 		}
 
 	}
@@ -125,8 +132,10 @@ func (w *World) followPath(person *Person) error {
 	}
 	newPos, end := person.paths.Denqueue()
 	if end {
+		person.Status = WORKING
 		return nil
 	}
+	person.Status = MOVING
 	_, err := person.currentCell.PopPerson(person.id)
 	if err != nil {
 		return err
@@ -206,6 +215,9 @@ func (w *World) PerformPathFinding() {
 func (w *World) MovementSimulation() error {
 	var peopleByJob map[Job][]*Person = make(map[Job][]*Person)
 	for i, person := range w.people {
+		if person.Status == DEAD {
+			continue
+		}
 		if person.IsTouch() {
 			continue
 		}
@@ -216,10 +228,14 @@ func (w *World) MovementSimulation() error {
 		}
 	}
 	var err error
-	for _, people := range peopleByJob {
+	for job, people := range peopleByJob {
 		for _, person := range people {
-			if w.followPath(person) != nil {
+			err = w.followPath(person)
+			if err != nil {
 				return err
+			}
+			for _, v := range JobToConsumingCost[job] {
+				w.resources[v.What] -= v.Amount
 			}
 		}
 
@@ -230,13 +246,39 @@ func (w *World) MovementSimulation() error {
 func (w *World) ResourcesCounting() error {
 	countPeople := func(cells map[common.Vec[int32]]*BaseCell) (r int) {
 		for i := range cells {
-			r += cells[i].GetPeopleNumber()
+			r += len((cells[i]).GetPeople(func(p Person) bool { return p.Status != DEAD }))
 		}
 		return r
 	}
+
 	for celltype, cells := range w.cellBlock {
 		for _, r := range CellToResource[celltype] {
 			w.resources[r.What] += float32(countPeople(cells)) * r.Amount
+		}
+	}
+	fmt.Printf("%v\n", w.resources)
+	var maxTime = 10
+	if w.resources[FOOD] < -100 {
+		r := rand.Intn(len(w.people))
+		for {
+			if maxTime == 0 {
+				return nil
+			}
+			if w.people[r].Status == DEAD {
+				r = rand.Intn(len(w.people))
+				maxTime--
+				continue
+			}
+			if w.people[r].Status == MOVING && w.people[r].paths != nil {
+				p := w.people[r].paths.GetLast()
+				c, _ := w.Map.GetCell(*p)
+				c.VirtualNPopulation--
+				w.toRunPathFinding = true
+			} else if w.people[r].Status == WORKING {
+				w.people[r].currentCell.VirtualNPopulation--
+			}
+			w.people[r].Status = DEAD
+			w.people[r].Touch()
 		}
 	}
 	return nil

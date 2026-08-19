@@ -4,7 +4,6 @@ import (
 	"GameOfLife/api/graphics"
 	"GameOfLife/common"
 	"GameOfLife/core"
-	"fmt"
 	"math/rand"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -23,13 +22,14 @@ func main() {
 	w.GenerateMap()
 	var timer float32 = 0.0
 	var currentJob core.Job = core.FARMER
+	var err error
 	rl.SetTargetFPS(60)
 	for !rl.WindowShouldClose() {
 		core.TOUCH_ID = rand.Int()
 		rl.ClearBackground(rl.White)
 		rl.BeginDrawing()
 		render.TickPeopleAnimation()
-		err := w.Map.ForEach(func(x, y int32, cell *core.BaseCell) error {
+		err = w.Map.ForEach(func(x, y int32, cell *core.BaseCell) error {
 			return render.DrawCell(x, y, cell)
 		})
 		if err != nil {
@@ -39,49 +39,49 @@ func main() {
 
 		if rl.IsKeyPressed(rl.KeyG) {
 			p := rl.GetMousePosition()
-			err := w.AddBlock(core.WHEAT_FIELD, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 1, Y: 1})
+			err = w.AddBlock(core.WHEAT_FIELD, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 1, Y: 1})
 			if err != nil {
 				println(err.Error())
 			}
 		}
 		if rl.IsKeyPressed(rl.KeyM) {
 			p := rl.GetMousePosition()
-			err := w.AddBlock(core.MINE, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 1, Y: 1})
+			err = w.AddBlock(core.MINE, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 1, Y: 1})
 			if err != nil {
 				println(err.Error())
 			}
 		}
 		if rl.IsKeyPressed(rl.KeyH) {
 			p := rl.GetMousePosition()
-			err := w.AddBlock(core.HOUSE, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 1, Y: 1})
+			err = w.AddBlock(core.HOUSE, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 1, Y: 1})
 			if err != nil {
 				println(err.Error())
 			}
 		}
 		if rl.IsKeyPressed(rl.KeyF) {
 			p := rl.GetMousePosition()
-			err := w.AddBlock(core.FOREST, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 1, Y: 1})
+			err = w.AddBlock(core.FOREST, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 1, Y: 1})
 			if err != nil {
 				println(err.Error())
 			}
 		}
 		if rl.IsKeyPressed(rl.KeyR) {
 			p := rl.GetMousePosition()
-			err := w.AddBlock(core.STONE, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 5, Y: 5})
+			err = w.AddBlock(core.STONE, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 5, Y: 5})
 			if err != nil {
 				println(err.Error())
 			}
 		}
 		if rl.IsKeyPressed(rl.KeyW) {
 			p := rl.GetMousePosition()
-			err := w.AddBlock(core.WATER, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 3, Y: 3})
+			err = w.AddBlock(core.WATER, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 3, Y: 3})
 			if err != nil {
 				println(err.Error())
 			}
 		}
 		if rl.IsKeyPressed(rl.KeyD) {
 			p := rl.GetMousePosition()
-			err := w.AddBlock(core.DOCK, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 1, Y: 1})
+			err = w.AddBlock(core.DOCK, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 1, Y: 1})
 			if err != nil {
 				println(err.Error())
 			}
@@ -105,7 +105,7 @@ func main() {
 		if rl.IsKeyPressed(rl.KeyP) {
 			cells := w.GetCellBlock(core.HOUSE)
 			for i := range cells {
-				w.NewPerson(core.Job(currentJob), cells[i])
+				w.NewPerson(core.Job(currentJob), cells[i], 0)
 			}
 		}
 		timer += rl.GetFrameTime()
@@ -119,7 +119,7 @@ func main() {
 			timer -= 0.5 // or timer = 0, but -= preserves overshoot accuracy
 		}
 		if 1/rl.GetFrameTime() < 50 {
-			fmt.Printf("fps:%v people:%v\n", 1/rl.GetFrameTime(), len(w.GetPeople(func(p core.Person) bool { return true })))
+			//fmt.Printf("fps:%v people:%v\n", 1/rl.GetFrameTime(), len(w.GetPeople(func(p core.Person) bool { return true })))
 		}
 
 	}
