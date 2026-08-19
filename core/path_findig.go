@@ -60,7 +60,7 @@ func fromAtoB(a, b common.Vec[int32]) int32 {
 	return common.DistanceAtoBVecShev(a, b)
 }
 
-func foreachNeighboarhood(m *Map, pos common.Vec[int32], callback func(x, y int32)) {
+func foreachNeighboarhood(m *Map, pos common.Vec[int32], callback func(x, y int32) (stop bool)) {
 	for iy := range int32(3) {
 		for ix := range int32(3) {
 			worldX := pos.X + (ix - 1)
@@ -78,7 +78,9 @@ func foreachNeighboarhood(m *Map, pos common.Vec[int32], callback func(x, y int3
 				continue
 			}
 
-			callback(worldX, worldY)
+			if callback(worldX, worldY) {
+				return
+			}
 		}
 	}
 }
@@ -94,18 +96,27 @@ func PerformPathFindig(m *Map, start, goal common.Vec[int32]) []common.Vec[int32
 	startingOrigin := pathFindigInformation{
 		pos: start,
 	}
-	discoverNeighboardhood := func(origin pathFindigInformation) func(x, y int32) {
-		return func(x, y int32) {
+	discoverNeighboardhood := func(origin pathFindigInformation) func(x, y int32) (stop bool) {
+		return func(x, y int32) (stop bool) {
 			pos := common.Vec[int32]{X: x, Y: y}
 			if c, err := m.GetCell(pos); err == nil {
 				if slices.Contains([]CellType{WATER}, c.blockType) {
-					return
+					return false
 				}
 			}
 
 			weightFromStart := origin.weightFromStart + 2
 			if !slices.Contains([]float32{0, 90, 180, 270, 360}, pos.Clone().Sub(goal).Angle()) {
 				weightFromStart += 1
+			}
+			if pos.IsEqual(goal) {
+				toDiscover = InsertSorted(toDiscover, &pathFindigInformation{
+					pos:             pos,
+					origin:          &origin,
+					weightFromStart: weightFromStart,
+					weightToGoal:    fromAtoB(pos, goal),
+				})
+				return true
 			}
 			weightToGoal := fromAtoB(pos, goal)
 			if _, ok := discovered[pos]; ok {
@@ -135,6 +146,7 @@ func PerformPathFindig(m *Map, start, goal common.Vec[int32]) []common.Vec[int32
 				weightFromStart: weightFromStart,
 				weightToGoal:    fromAtoB(pos, goal),
 			})
+			return false
 		}
 	}
 	foreachNeighboarhood(m, start, discoverNeighboardhood(startingOrigin))
