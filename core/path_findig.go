@@ -121,13 +121,6 @@ func PerformPathFindig(m *Map, start, goal common.Vec[int32]) []common.Vec[int32
 			weightToGoal := fromAtoB(pos, goal)
 			if _, ok := discovered[pos]; ok {
 				return
-				//	if weightToGoal+weightFromStart < explored.weightToGoal+explored.weightFromStart {
-				//		explored.origin = &origin
-				//		explored.weightFromStart = weightFromStart
-				//		explored.weightToGoal = weightToGoal
-				//		delete(discovered, pos)
-				//		toDiscover = InsertSorted(toDiscover, explored)
-				//	}
 			}
 			if id := Search(toDiscover, pos); id != -1 {
 				a := toDiscover[id]
@@ -150,14 +143,12 @@ func PerformPathFindig(m *Map, start, goal common.Vec[int32]) []common.Vec[int32
 		}
 	}
 	foreachNeighboarhood(m, start, discoverNeighboardhood(startingOrigin))
-	visit := 0
 	for {
 		if len(toDiscover) == 0 {
 			return nil
 		}
 		explored := toDiscover[0]
 		toDiscover = slices.Delete(toDiscover, 0, 1)
-		visit++
 
 		if explored.pos.IsEqual(goal) {
 			return explored.retriavePath()
