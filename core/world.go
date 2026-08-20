@@ -10,7 +10,10 @@ import (
 )
 
 var TOUCH_ID int
-var ID_PEOPLE int = 1
+
+type ID_PEOPLE int
+
+var CURRENT_ID_PEOPLE ID_PEOPLE = 1
 
 type World struct {
 	Map              *Map

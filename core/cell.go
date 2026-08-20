@@ -75,7 +75,7 @@ func (BaseCell *BaseCell) GetPeople(check func(p Person) bool) (res []*Person) {
 	return res
 }
 
-func (BaseCell *BaseCell) PopPerson(id int) (p *Person, err error) {
+func (BaseCell *BaseCell) PopPerson(id ID_PEOPLE) (p *Person, err error) {
 	for i := range BaseCell.people {
 		if BaseCell.people[i].id == id {
 			p = BaseCell.people[i]

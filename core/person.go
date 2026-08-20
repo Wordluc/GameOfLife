@@ -21,7 +21,7 @@ const (
 )
 
 type Person struct {
-	id          int
+	id          ID_PEOPLE
 	idOrigin    int
 	Job         Job
 	currentCell *BaseCell
@@ -32,11 +32,10 @@ type Person struct {
 
 func newPerson(job Job, idOrigin int) Person {
 	p := Person{
-		id:       ID_PEOPLE,
+		id:       CURRENT_ID_PEOPLE,
 		Job:      job,
 		idOrigin: idOrigin,
 	}
-	ID_PEOPLE++
 	return p
 }
 
