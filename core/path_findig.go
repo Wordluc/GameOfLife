@@ -86,7 +86,7 @@ func foreachNeighboarhood(m *Map, pos common.Vec[int32], callback func(x, y int3
 }
 func drawDebugCell(pos common.Vec[int32], c rl.Color) {
 	rl.BeginDrawing()
-	rl.DrawRectangle(pos.X*10, pos.Y*10, 10, 10, c)
+	rl.DrawRectangle(pos.X*30, pos.Y*30, 30, 30, c)
 	rl.EndDrawing()
 }
 
@@ -99,26 +99,29 @@ func PerformPathFindig(m *Map, start, goal common.Vec[int32]) []common.Vec[int32
 	discoverNeighboardhood := func(origin pathFindigInformation) func(x, y int32) (stop bool) {
 		return func(x, y int32) (stop bool) {
 			pos := common.Vec[int32]{X: x, Y: y}
+			drawDebugCell(pos, rl.Yellow)
 			if c, err := m.GetCell(pos); err == nil {
-				if slices.Contains([]CellType{WATER}, c.blockType) {
+				if slices.Contains([]CellType{WATER, STONE}, c.blockType) {
 					return false
 				}
 			}
 
 			weightFromStart := origin.weightFromStart + 2
 			if !slices.Contains([]float32{0, 90, 180, 270, 360}, pos.Clone().Sub(goal).Angle()) {
+				//TO PREDILECT STRAIGHT LINE
 				weightFromStart += 1
 			}
+			//TO AVOID EXPLORING TO MUCH FURTHER TO THE GOAL
+			weightToGoal := fromAtoB(pos, goal) * 6
 			if pos.IsEqual(goal) {
 				toDiscover = InsertSorted(toDiscover, &pathFindigInformation{
 					pos:             pos,
 					origin:          &origin,
 					weightFromStart: weightFromStart,
-					weightToGoal:    fromAtoB(pos, goal),
+					weightToGoal:    weightToGoal,
 				})
 				return true
 			}
-			weightToGoal := fromAtoB(pos, goal)
 			if _, ok := discovered[pos]; ok {
 				return
 			}
@@ -137,20 +140,22 @@ func PerformPathFindig(m *Map, start, goal common.Vec[int32]) []common.Vec[int32
 				pos:             pos,
 				origin:          &origin,
 				weightFromStart: weightFromStart,
-				weightToGoal:    fromAtoB(pos, goal),
+				weightToGoal:    weightToGoal,
 			})
 			return false
 		}
 	}
 	foreachNeighboarhood(m, start, discoverNeighboardhood(startingOrigin))
+	visit := 0
 	for {
 		if len(toDiscover) == 0 {
 			return nil
 		}
 		explored := toDiscover[0]
 		toDiscover = slices.Delete(toDiscover, 0, 1)
-
+		visit++
 		if explored.pos.IsEqual(goal) {
+			println(visit)
 			return explored.retriavePath()
 		}
 		discovered[explored.pos] = explored
