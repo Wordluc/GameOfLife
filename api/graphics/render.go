@@ -1,8 +1,10 @@
 package graphics
 
-import "GameOfLife/core"
+import (
+	"GameOfLife/core"
+)
 
 type Render interface {
-	DrawCell(int32, int32, *core.BaseCell) error
+	DrawCell(x, y int32, w *core.World) error
 	TickPeopleAnimation()
 }

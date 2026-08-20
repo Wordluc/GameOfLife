@@ -4,32 +4,37 @@ import (
 	"GameOfLife/common"
 	"errors"
 	"fmt"
-	"math"
-	"math/rand"
 	"slices"
 )
 
+type ID_NATION int
+
 var TOUCH_ID int
 
-type ID_PEOPLE int
+type bindingCellTypeToCell map[CellType][]common.Vec[int32]
 
-var CURRENT_ID_PEOPLE ID_PEOPLE = 1
+func (b bindingCellTypeToCell) SetCellTypeCell(cell *BaseCell, newCellType CellType) {
+	b[cell.cellType] = slices.DeleteFunc(b[cell.cellType], func(a common.Vec[int32]) bool { return a.IsEqual(cell.pos) })
+	b[newCellType] = append(b[newCellType], cell.pos)
+	cell.cellType = newCellType
+}
 
 type World struct {
-	Map              *Map
-	cellBlock        map[CellType]map[common.Vec[int32]]*BaseCell
-	people           []*Person
-	resources        map[Resource]float32
-	toRunPathFinding bool
-	Id               int
+	Map                   *Map
+	Populations           *WorldPopulation
+	resources             map[Resource]float32
+	toRunPathFinding      bool
+	bindingCellTypeToCell bindingCellTypeToCell
+	idNations             []ID_NATION
 }
 
 func NewWorld(size common.Vec[int32]) (w World) {
 	w.Map = new(NewMap(size))
-	w.cellBlock = map[CellType]map[common.Vec[int32]]*BaseCell{}
 	w.resources = map[Resource]float32{
 		FOOD: 1000,
 	}
+	w.Populations = new(NewWorldPopulation(&w))
+	w.bindingCellTypeToCell = make(bindingCellTypeToCell)
 	return w
 }
 
@@ -39,65 +44,48 @@ func (w *World) GenerateMap() {
 	})
 }
 
-func (w *World) GetPeople(check func(p Person) bool) (res []*Person) {
-	for i := range w.people {
-		if check(*w.people[i]) {
-			res = append(res, w.people[i])
-		}
-	}
-	return res
-}
-
-func (w *World) NewPerson(job Job, cell *BaseCell, idOrigin int) *Person {
-	p := new(newPerson(job, idOrigin))
-	cell.AppendPerson(p)
-	w.setWhereToGo(p)
-	w.people = append(w.people, p)
-	return p
-}
-
 func (w *World) setWhereToGo(person ...*Person) {
-	var cachePath map[common.Vec[int32]]map[common.Vec[int32]]*common.Queue[common.Vec[int32]] = map[common.Vec[int32]]map[common.Vec[int32]]*common.Queue[common.Vec[int32]]{}
-	getMinPath := func(person *Person, cells map[common.Vec[int32]]*BaseCell) (goal *BaseCell, pathToGoal *common.Queue[common.Vec[int32]], found bool) {
-		var path *common.Queue[common.Vec[int32]]
-		var minPath int = math.MaxInt
-		var oldGoalPos common.Vec[int32]
-		if person.paths != nil {
-			oldGoal, _ := w.Map.GetCell(*person.paths.GetLast())
-			oldGoal.VirtualNPopulation--
-			oldGoalPos = oldGoal.pos
-			if oldGoal.VirtualNPopulation < 0 {
-				oldGoal.VirtualNPopulation = 0
-			}
-		}
-		for pos := range cells {
-			if cells[pos].maxNPopulation != 0 && cells[pos].maxNPopulation < cells[pos].VirtualNPopulation+1 {
-				continue
-			}
-			if cachePath[person.currentCell.pos] != nil && cachePath[person.currentCell.pos][pos] != nil {
-				path = cachePath[person.currentCell.pos][pos].Clone()
-			} else {
-				path = common.NewQueue(PerformPathFindig(w.Map, person.currentCell.pos, pos))
-				if cachePath[person.currentCell.pos] == nil {
-					cachePath[person.currentCell.pos] = map[common.Vec[int32]]*common.Queue[common.Vec[int32]]{}
-				}
-				cachePath[person.currentCell.pos][pos] = path.Clone()
-			}
-			if minPath > path.Len() {
-				minPath = path.Len()
-				pathToGoal = path
-				goal = cells[pos]
-			}
-		}
-		if goal == nil {
-			return nil, nil, false
-		}
-		goal.VirtualNPopulation++
-		if goal.pos.IsEqual(oldGoalPos) {
-			return nil, nil, true
-
-		}
-		person.paths = pathToGoal
+	//var cachePath map[common.Vec[int32]]map[common.Vec[int32]]*common.Queue[common.Vec[int32]] = map[common.Vec[int32]]map[common.Vec[int32]]*common.Queue[common.Vec[int32]]{}
+	getMinPath := func(person *Person, cellsPos []common.Vec[int32]) (goal *BaseCell, pathToGoal *common.Queue[common.Vec[int32]], found bool) {
+		//		var path *common.Queue[common.Vec[int32]]
+		//		var minPath int = math.MaxInt
+		//		var oldGoalPos common.Vec[int32]
+		//		if person.paths != nil {
+		//			oldGoal, _ := w.Map.GetCell(*person.paths.GetLast())
+		//			oldGoal.VirtualNPopulation--
+		//			oldGoalPos = oldGoal.pos
+		//			if oldGoal.VirtualNPopulation < 0 {
+		//				oldGoal.VirtualNPopulation = 0
+		//			}
+		//		}
+		//		for pos := range cells {
+		//			if cells[pos].maxNPopulation != 0 && cells[pos].maxNPopulation < cells[pos].VirtualNPopulation+1 {
+		//				continue
+		//			}
+		//			if cachePath[person.pos] != nil && cachePath[person.pos][pos] != nil {
+		//				path = cachePath[person.pos][pos].Clone()
+		//			} else {
+		//				path = common.NewQueue(PerformPathFindig(w.Map, person.pos, pos))
+		//				if cachePath[person.pos] == nil {
+		//					cachePath[person.pos] = map[common.Vec[int32]]*common.Queue[common.Vec[int32]]{}
+		//				}
+		//				cachePath[person.pos][pos] = path.Clone()
+		//			}
+		//			if minPath > path.Len() {
+		//				minPath = path.Len()
+		//				pathToGoal = path
+		//				goal = cells[pos]
+		//			}
+		//		}
+		//		if goal == nil {
+		//			return nil, nil, false
+		//		}
+		//		goal.VirtualNPopulation++
+		//		if goal.pos.IsEqual(oldGoalPos) {
+		//			return nil, nil, true
+		//
+		//		}
+		//		person.paths = pathToGoal
 		return goal, pathToGoal, true
 	}
 	for iPerson := range person {
@@ -105,7 +93,7 @@ func (w *World) setWhereToGo(person ...*Person) {
 		found := false
 		toGo := JobToCells[person[iPerson].Job]
 		for {
-			cellsToGo := w.cellBlock[toGo[i]]
+			cellsToGo := w.bindingCellTypeToCell[toGo[i]]
 			_, _, found = getMinPath(person[iPerson], cellsToGo)
 			if found {
 				break
@@ -123,39 +111,6 @@ func (w *World) setWhereToGo(person ...*Person) {
 		}
 
 	}
-}
-
-func (w *World) followPath(person *Person) error {
-	if person.paths == nil {
-		return nil
-	}
-	from := person.paths.GetBack(1)
-	if from != nil && !from.IsEqual(person.currentCell.pos) {
-		return errors.New("Error initial position")
-	}
-	newPos, end := person.paths.Denqueue()
-	if end {
-		person.Status = WORKING
-		return nil
-	}
-	person.Status = MOVING
-	_, err := person.currentCell.PopPerson(person.id)
-	if err != nil {
-		return err
-	}
-	newCell, err := w.Map.GetCell(newPos)
-	if err != nil {
-		return err
-	}
-	person.Touch()
-	return newCell.AppendPerson(person)
-}
-
-func (w *World) GetCellBlock(cellType CellType) (res []*BaseCell) {
-	for _, r := range w.cellBlock[cellType] {
-		res = append(res, r)
-	}
-	return res
 }
 
 func (w *World) AddBlock(cellType CellType, pos common.Vec[int32], size common.Vec[int32]) error {
@@ -196,93 +151,87 @@ func (w *World) AddBlock(cellType CellType, pos common.Vec[int32], size common.V
 		if err != nil {
 			return err
 		}
-		delete(w.cellBlock[cell.blockType], pos)
+		w.bindingCellTypeToCell.SetCellTypeCell(cell, cellType)
 		definition.convert(cell)
-		if w.cellBlock[cellType] == nil {
-			w.cellBlock[cellType] = make(map[common.Vec[int32]]*BaseCell)
-		}
-		w.cellBlock[cellType][pos] = cell
 	}
 	w.toRunPathFinding = true
 	return nil
+}
+
+func (w *World) GetCellsByType(cellType CellType) (res []*BaseCell, err error) {
+	var cell *BaseCell
+	for _, pos := range w.bindingCellTypeToCell[cellType] {
+		cell, err = w.Map.GetCell(pos)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, cell)
+	}
+	return res, nil
 }
 
 func (w *World) PerformPathFinding() {
 	if !w.toRunPathFinding {
 		return
 	}
-	w.setWhereToGo(w.people...)
+	w.setWhereToGo(w.Populations.people...)
 	w.toRunPathFinding = false
 }
 
-func (w *World) MovementSimulation() error {
-	var peopleByJob map[Job][]*Person = make(map[Job][]*Person)
-	for i, person := range w.people {
-		if person.Status == DEAD {
-			continue
-		}
-		if person.IsTouch() {
-			continue
-		}
-		if _, ok := peopleByJob[person.Job]; !ok {
-			peopleByJob[person.Job] = []*Person{w.people[i]}
-		} else {
-			peopleByJob[person.Job] = append(peopleByJob[person.Job], w.people[i])
-		}
+func (w *World) NewPerson(job Job, where common.Vec[int32], idNation ID_NATION) *Person {
+	if !slices.Contains(w.idNations, idNation) {
+		w.idNations = append(w.idNations, idNation)
 	}
-	var err error
-	for job, people := range peopleByJob {
-		for _, person := range people {
-			err = w.followPath(person)
-			if err != nil {
-				return err
-			}
-			for _, v := range JobToConsumingCost[job] {
-				w.resources[v.What] -= v.Amount
-			}
-		}
+	return w.Populations.newPerson(job, where, idNation)
+}
 
+func (w *World) MovementSimulation() (err error) {
+	for i := range w.idNations {
+		err = w.Populations.movePopulationToGoals(w.idNations[i])
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func (w *World) ResourcesCounting() error {
-	countPeople := func(cells map[common.Vec[int32]]*BaseCell) (r int) {
-		for i := range cells {
-			r += len((cells[i]).GetPeople(func(p Person) bool { return p.Status != DEAD }))
-		}
-		return r
-	}
-
-	for celltype, cells := range w.cellBlock {
-		for _, r := range CellToResource[celltype] {
-			w.resources[r.What] += float32(countPeople(cells)) * r.Amount
-		}
-	}
-	fmt.Printf("%v\n", w.resources)
-	var maxTime = 10
-	if w.resources[FOOD] < -100 {
-		r := rand.Intn(len(w.people))
-		for {
-			if maxTime == 0 {
-				return nil
+	n := 0
+	for _, idNation := range w.idNations {
+		for celltype, cellsPos := range w.bindingCellTypeToCell {
+			for _, pos := range cellsPos {
+				n = len(w.Populations.bindingCellToPeople[pos][idNation])
+				for _, q := range CellTypeToResource[celltype] {
+					w.resources[q.What] += float32(n) * q.Amount
+				}
 			}
-			if w.people[r].Status == DEAD {
-				r = rand.Intn(len(w.people))
-				maxTime--
-				continue
-			}
-			if w.people[r].Status == MOVING && w.people[r].paths != nil {
-				p := w.people[r].paths.GetLast()
-				c, _ := w.Map.GetCell(*p)
-				c.VirtualNPopulation--
-				w.toRunPathFinding = true
-			} else if w.people[r].Status == WORKING {
-				w.people[r].currentCell.VirtualNPopulation--
-			}
-			w.people[r].Status = DEAD
-			w.people[r].Touch()
 		}
 	}
+	//
+	//	fmt.Printf("%v\n", w.resources)
+	//	var maxTime = 10
+	//	if w.resources[FOOD] < -100 {
+	//		r := rand.Intn(len(w.people))
+	//		for {
+	//			if maxTime == 0 {
+	//				return nil
+	//			}
+	//			if w.people[r].Status == DEAD {
+	//				r = rand.Intn(len(w.people))
+	//				maxTime--
+	//				continue
+	//			}
+	//			if w.people[r].Status == MOVING && w.people[r].paths != nil {
+	//				p := w.people[r].paths.GetLast()
+	//				c, _ := w.Map.GetCell(*p)
+	//				c.VirtualNPopulation--
+	//				w.toRunPathFinding = true
+	//			} else if w.people[r].Status == WORKING {
+	//				w.people[r].currentCell.VirtualNPopulation--
+	//			}
+	//			w.people[r].Status = DEAD
+	//			w.people[r].Touch()
+	//		}
+	//	}
 	return nil
 }

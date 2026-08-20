@@ -21,21 +21,23 @@ const (
 )
 
 type Person struct {
-	id          ID_PEOPLE
-	idOrigin    int
-	Job         Job
-	currentCell *BaseCell
-	touch       int
-	paths       *common.Queue[common.Vec[int32]]
-	Status      Status
+	id       ID_PERSON
+	idNation ID_NATION
+	Job      Job
+	touch    int
+	paths    *common.Queue[common.Vec[int32]]
+	Status   Status
+	pos      common.Vec[int32]
 }
 
-func newPerson(job Job, idOrigin int) Person {
+func newPerson(job Job, idNation ID_NATION, pos common.Vec[int32]) Person {
 	p := Person{
 		id:       CURRENT_ID_PEOPLE,
 		Job:      job,
-		idOrigin: idOrigin,
+		idNation: idNation,
+		pos:      pos,
 	}
+	CURRENT_ID_PEOPLE++
 	return p
 }
 

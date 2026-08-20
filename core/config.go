@@ -18,7 +18,7 @@ var JobToConsumingCost = map[Job][]Quantity[Resource, float32]{
 	FISHERMAN:  {{FOOD, 1.5}},
 }
 
-var CellToResource map[CellType][]Quantity[Resource, float32] = map[CellType][]Quantity[Resource, float32]{
+var CellTypeToResource map[CellType][]Quantity[Resource, float32] = map[CellType][]Quantity[Resource, float32]{
 	WHEAT_FIELD: {{FOOD, 2}},
 	DOCK:        {{FOOD, 3}},
 	MINE:        {{IRON, 0.5}},

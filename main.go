@@ -29,8 +29,8 @@ func main() {
 		rl.ClearBackground(rl.White)
 		rl.BeginDrawing()
 		render.TickPeopleAnimation()
-		err = w.Map.ForEach(func(x, y int32, cell *core.BaseCell) error {
-			return render.DrawCell(x, y, cell)
+		err = w.Map.ForEach(func(x, y int32) error {
+			return render.DrawCell(x, y, &w)
 		})
 		if err != nil {
 			panic(err)
@@ -103,9 +103,13 @@ func main() {
 			println("Fischerman")
 		}
 		if rl.IsKeyPressed(rl.KeyP) {
-			cells := w.GetCellBlock(core.HOUSE)
-			for i := range cells {
-				w.NewPerson(core.Job(currentJob), cells[i], 0)
+			cells, err := w.GetCellsByType(core.HOUSE)
+			if err != nil {
+				println(err.Error())
+			} else {
+				for i := range cells {
+					w.NewPerson(core.Job(currentJob), cells[i].GetPos(), 0)
+				}
 			}
 		}
 		timer += rl.GetFrameTime()

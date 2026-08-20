@@ -67,10 +67,10 @@ func (m *Map) GetCell(pos common.Vec[int32]) (res *BaseCell, err error) {
 	return m.cells[pos.X+pos.Y*m.size.X], nil
 }
 
-func (m *Map) ForEach(f func(x, y int32, cell *BaseCell) error) (err error) {
+func (m *Map) ForEach(f func(x, y int32) error) (err error) {
 	for iy := range m.size.Y {
 		for ix := range m.size.X {
-			err = f(ix, iy, m.cells[ix+iy*m.size.X])
+			err = f(ix, iy)
 			if err != nil {
 				return err
 			}

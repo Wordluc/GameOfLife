@@ -22,8 +22,7 @@ const (
 )
 
 type BaseCell struct {
-	blockType          CellType
-	people             []*Person
+	cellType           CellType
 	maxNPopulation     int
 	VirtualNPopulation int
 	other              any
@@ -33,8 +32,8 @@ type BaseCell struct {
 
 func NewEmptyBaseCell(pos common.Vec[int32]) *BaseCell {
 	return &BaseCell{
-		pos:       pos,
-		blockType: GRASS,
+		pos:      pos,
+		cellType: GRASS,
 	}
 }
 
@@ -47,56 +46,15 @@ func (BaseCell *BaseCell) IsTouch() bool {
 }
 
 func (BaseCell *BaseCell) SetType(t CellType) {
-	BaseCell.blockType = t
+	BaseCell.cellType = t
 }
 
 func (BaseCell *BaseCell) GetType() CellType {
-	return BaseCell.blockType
+	return BaseCell.cellType
 }
 
-func (BaseCell *BaseCell) AppendPerson(p *Person) error {
-	if p.id == 0 {
-		return errors.New("Wrong Id")
-	}
-	p.currentCell = BaseCell
-	BaseCell.people = append(BaseCell.people, p)
-	return nil
-}
-
-func (BaseCell *BaseCell) GetPeople(check func(p Person) bool) (res []*Person) {
-	if check == nil {
-		check = func(p Person) bool { return true }
-	}
-	for i := range BaseCell.people {
-		if check(*BaseCell.people[i]) {
-			res = append(res, BaseCell.people[i])
-		}
-	}
-	return res
-}
-
-func (BaseCell *BaseCell) PopPerson(id ID_PEOPLE) (p *Person, err error) {
-	for i := range BaseCell.people {
-		if BaseCell.people[i].id == id {
-			p = BaseCell.people[i]
-			BaseCell.people[i].currentCell = nil
-			BaseCell.people = slices.Delete(BaseCell.people, i, i+1)
-			return p, nil
-		}
-	}
-	return nil, fmt.Errorf("PopPerson: Id not found %v", id)
-}
-
-func (BaseCell *BaseCell) PopPersonf(check func(p Person) bool) (p *Person) {
-	for i := range BaseCell.people {
-		if check(*BaseCell.people[i]) {
-			p = BaseCell.people[i]
-			BaseCell.people[i].currentCell = nil
-			BaseCell.people = slices.Delete(BaseCell.people, i, i+1)
-			return p
-		}
-	}
-	return nil
+func (BaseCell *BaseCell) GetPos() common.Vec[int32] {
+	return BaseCell.pos
 }
 
 type CellDefinition struct {
@@ -143,7 +101,7 @@ var cellsDefinition map[CellType]CellDefinition = map[CellType]CellDefinition{
 					continue
 				}
 				if slices.ContainsFunc([]CellType{DOCK, GRASS}, func(a CellType) bool {
-					return a == typeCell.blockType
+					return a == typeCell.cellType
 				}) {
 					return true
 				}
@@ -162,47 +120,47 @@ func GetCellDefinition(t CellType) (CellDefinition, error) {
 }
 
 func ConvertToGrassCell(c *BaseCell) error {
-	c.blockType = GRASS
+	c.cellType = GRASS
 	c.touch = TOUCH_ID
 	return nil
 }
 
 func ConvertToStoneCell(c *BaseCell) error {
-	c.blockType = STONE
+	c.cellType = STONE
 	c.touch = TOUCH_ID
 	return nil
 }
 
 func ConvertToHouseCell(c *BaseCell) error {
-	c.blockType = HOUSE
+	c.cellType = HOUSE
 	c.touch = TOUCH_ID
 	return nil
 }
 func ConvertToWheatCell(c *BaseCell) error {
-	c.blockType = WHEAT_FIELD
+	c.cellType = WHEAT_FIELD
 	c.touch = TOUCH_ID
 	c.maxNPopulation = 10
 	return nil
 }
 func ConvertToMineCell(c *BaseCell) error {
-	c.blockType = MINE
+	c.cellType = MINE
 	c.touch = TOUCH_ID
 	c.maxNPopulation = 10
 	return nil
 }
 func ConvertToForestCell(c *BaseCell) error {
-	c.blockType = FOREST
+	c.cellType = FOREST
 	c.touch = TOUCH_ID
 	c.maxNPopulation = 10
 	return nil
 }
 func ConvertToWaterCell(c *BaseCell) error {
-	c.blockType = WATER
+	c.cellType = WATER
 	c.touch = TOUCH_ID
 	return nil
 }
 func ConvertToDockCell(c *BaseCell) error {
-	c.blockType = DOCK
+	c.cellType = DOCK
 	c.touch = TOUCH_ID
 	c.maxNPopulation = 10
 	return nil

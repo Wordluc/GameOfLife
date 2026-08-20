@@ -16,9 +16,14 @@ type RaylibRender struct {
 	PeopleSeed int8
 }
 
-func (r *RaylibRender) DrawCell(x, y int32, c *core.BaseCell) error {
+func (r *RaylibRender) DrawCell(x, y int32, w *core.World) error {
 	var color rl.Color
-	switch c.GetType() {
+	pos := common.Vec[int32]{X: x, Y: y}
+	cell, err := w.Map.GetCell(pos)
+	if err != nil {
+		return err
+	}
+	switch cell.GetType() {
 	case core.GRASS:
 		color = rl.Green
 	case core.STONE:
@@ -43,12 +48,12 @@ func (r *RaylibRender) DrawCell(x, y int32, c *core.BaseCell) error {
 
 	cellX := r.SizeCell.X * x
 	cellY := r.SizeCell.Y * y
-	n := len(c.GetPeople(func(p core.Person) bool { return p.Status != core.DEAD }))
+	n := w.Populations.GetPeopleInsideCell(pos, nil)
 	rl.DrawRectangle(cellX, cellY, r.SizeCell.X, r.SizeCell.Y, color)
-	rl.DrawText(fmt.Sprint(c.VirtualNPopulation), cellX, cellY, 3, rl.Red)
+	//rl.DrawText(fmt.Sprint(c.VirtualNPopulation), cellX, cellY, 3, rl.Red)
 	rl.DrawText(fmt.Sprint(n), cellX+10, cellY, 3, rl.Red)
 
-	drawPeopleDots(cellX, cellY, r.SizeCell.X, r.SizeCell.Y, n, r.PeopleSeed, rl.Red)
+	drawPeopleDots(cellX, cellY, r.SizeCell.X, r.SizeCell.Y, len(n), r.PeopleSeed, rl.Red)
 	return nil
 }
 
