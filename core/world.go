@@ -118,10 +118,10 @@ func (w *World) AddBlock(cellType CellType, pos common.Vec[int32], size common.V
 	halfX := size.X / 2
 	halfY := size.Y / 2
 	if size.X <= 0 || size.Y <= 0 {
-		return errors.New("invalid neighborhood size")
+		return errors.New("Invalid neighborhood size")
 	}
 	if size.X%2 == 0 || size.Y%2 == 0 {
-		return errors.New("neighborhood size must be odd")
+		return errors.New("Neighborhood size must be odd")
 	}
 	if pos.X-halfX < 0 || pos.Y-halfY < 0 || pos.X+halfX >= w.Map.size.X || pos.Y+halfY >= w.Map.size.Y {
 		return errors.New("Out of bound")
@@ -135,16 +135,16 @@ func (w *World) AddBlock(cellType CellType, pos common.Vec[int32], size common.V
 	if err != nil {
 		return err
 	}
-	if definition.ConvertibleFrom != nil {
+	if definition.ConvertFrom != nil {
 		for _, n := range neighborhood {
-			if !slices.Contains(definition.ConvertibleFrom, n.GetType()) {
+			if !slices.Contains(definition.ConvertFrom, n.GetType()) {
 				return fmt.Errorf("%v not support in %v", cellType, neighborhood[pos].GetType())
 			}
 		}
 	}
 	if definition.CanConvert != nil {
 		if !definition.CanConvert(pos, w.Map) {
-			return fmt.Errorf("ExtraCheck %v failed", cellType)
+			return fmt.Errorf("CanConvert %v failed", cellType)
 		}
 	}
 	for pos := range neighborhood {
@@ -153,7 +153,10 @@ func (w *World) AddBlock(cellType CellType, pos common.Vec[int32], size common.V
 			return err
 		}
 		w.CellType_ToPosCell.SetCellTypeCell(cell, cellType)
-		definition.convert(cell)
+		err = definition.convert(cell)
+		if err != nil {
+			return err
+		}
 	}
 	w.toRunPathFinding = true
 	t := make(map[From]map[To][]common.Vec[int32])
