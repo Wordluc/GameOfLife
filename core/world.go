@@ -153,7 +153,19 @@ func (w *World) AddBlock(cellType CellType, pos common.Vec[int32], size common.V
 		definition.convert(cell)
 	}
 	w.toRunPathFinding = true
-	cachedPath = make(map[From]map[To][]common.Vec[int32])
+	t := make(map[From]map[To][]common.Vec[int32])
+	for from, paths := range cachedPath {
+		for to, path := range paths {
+			if slices.ContainsFunc(path, func(a common.Vec[int32]) bool { return neighborhood[a] != nil }) {
+				continue
+			}
+			if t[from] == nil {
+				t[from] = map[To][]common.Vec[int32]{}
+			}
+			t[from][to] = cachedPath[from][to]
+		}
+	}
+	cachedPath = t
 	return nil
 }
 
