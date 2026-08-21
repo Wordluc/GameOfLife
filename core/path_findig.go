@@ -86,7 +86,7 @@ func foreachNeighboarhood(m *Map, pos common.Vec[int32], callback func(x, y int3
 }
 func drawDebugCell(pos common.Vec[int32], c rl.Color) {
 	rl.BeginDrawing()
-	rl.DrawRectangle(pos.X*10, pos.Y*10, 10, 10, c)
+	rl.DrawRectangle(pos.X*30, pos.Y*30, 30, 30, c)
 	rl.EndDrawing()
 }
 
@@ -109,15 +109,6 @@ func PerformPathFindig(m *Map, start, goal common.Vec[int32]) []common.Vec[int32
 			weightToGoal := fromAtoB(pos, goal) * 2
 			if !slices.Contains([]float32{0, 90, 180, 270, 360}, pos.Clone().Sub(goal).Angle()) {
 				weightFromStart += 1
-			}
-			if pos.IsEqual(goal) {
-				toDiscover = InsertSorted(toDiscover, &pathFindigInformation{
-					pos:             pos,
-					origin:          &origin,
-					weightFromStart: weightFromStart,
-					weightToGoal:    weightToGoal,
-				})
-				return true
 			}
 			if _, ok := discovered[pos]; ok {
 				return
