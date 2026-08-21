@@ -100,13 +100,16 @@ func (w *World) setNewPathFinding(people ...*Person) {
 
 			if len(path) != 0 {
 				cell, _ = w.Map.GetCell(goal)
-				if cell.VirtualNPopulation >= cell.maxNPopulation {
+				if cell.VirtualNPopulation >= cellsDefinition[cell.cellType].maxPeople {
 					continue
 				}
 				cell.VirtualNPopulation++
 				person.paths = common.NewQueue(path, nil)
 				break
 			}
+		}
+		if person.paths == nil {
+			person.status = IDLE
 		}
 	}
 }
@@ -132,15 +135,15 @@ func (w *World) AddBlock(cellType CellType, pos common.Vec[int32], size common.V
 	if err != nil {
 		return err
 	}
-	if definition.WhereCan != nil {
+	if definition.ConvertibleFrom != nil {
 		for _, n := range neighborhood {
-			if !slices.Contains(definition.WhereCan, n.GetType()) {
+			if !slices.Contains(definition.ConvertibleFrom, n.GetType()) {
 				return fmt.Errorf("%v not support in %v", cellType, neighborhood[pos].GetType())
 			}
 		}
 	}
-	if definition.ExtraCheck != nil {
-		if !definition.ExtraCheck(pos, w.Map) {
+	if definition.CanConvert != nil {
+		if !definition.CanConvert(pos, w.Map) {
 			return fmt.Errorf("ExtraCheck %v failed", cellType)
 		}
 	}

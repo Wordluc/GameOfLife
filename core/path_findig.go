@@ -89,6 +89,10 @@ func drawDebugCell(pos common.Vec[int32], c rl.Color) {
 	rl.DrawRectangle(pos.X*30, pos.Y*30, 30, 30, c)
 	rl.EndDrawing()
 }
+func isDiagonal(a, b common.Vec[int32]) bool {
+	diff := a.Sub(b)
+	return diff.X != 0 && diff.Y != 0
+}
 
 func PerformPathFindig(m *Map, start, goal common.Vec[int32]) []common.Vec[int32] {
 	var discovered map[common.Vec[int32]]*pathFindigInformation = make(map[common.Vec[int32]]*pathFindigInformation)
@@ -107,7 +111,7 @@ func PerformPathFindig(m *Map, start, goal common.Vec[int32]) []common.Vec[int32
 
 			weightFromStart := origin.weightFromStart + 2
 			weightToGoal := fromAtoB(pos, goal) * 2
-			if !slices.Contains([]float32{0, 90, 180, 270, 360}, pos.Clone().Sub(goal).Angle()) {
+			if isDiagonal(pos, goal) {
 				weightFromStart += 1
 			}
 			if _, ok := discovered[pos]; ok {

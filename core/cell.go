@@ -23,7 +23,6 @@ const (
 
 type BaseCell struct {
 	cellType           CellType
-	maxNPopulation     int
 	VirtualNPopulation int
 	other              any
 	touch              int
@@ -58,9 +57,10 @@ func (BaseCell *BaseCell) GetPos() common.Vec[int32] {
 }
 
 type CellDefinition struct {
-	convert    func(*BaseCell) error
-	WhereCan   []CellType
-	ExtraCheck func(pos common.Vec[int32], m *Map) (okToConvert bool)
+	convert         func(*BaseCell) error
+	ConvertibleFrom []CellType
+	maxPeople       int
+	CanConvert      func(pos common.Vec[int32], m *Map) (okToConvert bool)
 }
 
 var cellsDefinition map[CellType]CellDefinition = map[CellType]CellDefinition{
@@ -68,45 +68,54 @@ var cellsDefinition map[CellType]CellDefinition = map[CellType]CellDefinition{
 		convert: ConvertToGrassCell,
 	},
 	STONE: {
-		convert:  ConvertToStoneCell,
-		WhereCan: []CellType{GRASS, STONE},
+		convert:         ConvertToStoneCell,
+		ConvertibleFrom: []CellType{GRASS, STONE},
 	},
 	HOUSE: {
-		convert:  ConvertToHouseCell,
-		WhereCan: []CellType{GRASS, HOUSE},
+		convert:         ConvertToHouseCell,
+		ConvertibleFrom: []CellType{GRASS, HOUSE},
 	},
 	WHEAT_FIELD: {
-		convert:  ConvertToWheatCell,
-		WhereCan: []CellType{GRASS, WHEAT_FIELD},
+		convert:         ConvertToWheatCell,
+		ConvertibleFrom: []CellType{GRASS, WHEAT_FIELD},
+		maxPeople:       10,
 	},
 	MINE: {
-		convert:  ConvertToMineCell,
-		WhereCan: []CellType{STONE, MINE},
+		convert:         ConvertToMineCell,
+		ConvertibleFrom: []CellType{STONE, MINE},
+		maxPeople:       10,
 	},
 	FOREST: {
-		convert:  ConvertToForestCell,
-		WhereCan: []CellType{FOREST, GRASS, WHEAT_FIELD},
+		convert:         ConvertToForestCell,
+		ConvertibleFrom: []CellType{FOREST, GRASS, WHEAT_FIELD},
+		maxPeople:       10,
 	},
 	WATER: {
 		convert: ConvertToWaterCell,
 	},
 	DOCK: {
-		convert:  ConvertToDockCell,
-		WhereCan: []CellType{WATER},
-		ExtraCheck: func(pos common.Vec[int32], m *Map) (okToConvert bool) {
+		convert:         ConvertToDockCell,
+		ConvertibleFrom: []CellType{WATER},
+		maxPeople:       10,
+		CanConvert: func(pos common.Vec[int32], m *Map) (okToConvert bool) {
 			neir, _ := m.GetNeighborhoodCells(pos, common.Vec[int32]{X: 3, Y: 3})
-			for c, typeCell := range neir {
-				diff := c.Sub(pos)
+			waterCount := 0
+			dockOrGrassCount := 0
+			for posNeighbord, cell := range neir {
+				diff := posNeighbord.Sub(pos)
 				if diff.X != 0 && diff.Y != 0 {
+					// diagonal, skip
 					continue
 				}
-				if slices.ContainsFunc([]CellType{DOCK, GRASS}, func(a CellType) bool {
-					return a == typeCell.cellType
-				}) {
-					return true
+				if cell.cellType == WATER && !posNeighbord.IsEqual(pos) {
+					waterCount++
+				}
+
+				if slices.Contains([]CellType{DOCK, GRASS}, cell.cellType) {
+					dockOrGrassCount++
 				}
 			}
-			return false
+			return dockOrGrassCount > 0 && waterCount > 0
 		},
 	},
 }
@@ -139,19 +148,16 @@ func ConvertToHouseCell(c *BaseCell) error {
 func ConvertToWheatCell(c *BaseCell) error {
 	c.cellType = WHEAT_FIELD
 	c.touch = TOUCH_MOVE_PERSON_ID
-	c.maxNPopulation = 10
 	return nil
 }
 func ConvertToMineCell(c *BaseCell) error {
 	c.cellType = MINE
 	c.touch = TOUCH_MOVE_PERSON_ID
-	c.maxNPopulation = 10
 	return nil
 }
 func ConvertToForestCell(c *BaseCell) error {
 	c.cellType = FOREST
 	c.touch = TOUCH_MOVE_PERSON_ID
-	c.maxNPopulation = 10
 	return nil
 }
 func ConvertToWaterCell(c *BaseCell) error {
@@ -162,6 +168,5 @@ func ConvertToWaterCell(c *BaseCell) error {
 func ConvertToDockCell(c *BaseCell) error {
 	c.cellType = DOCK
 	c.touch = TOUCH_MOVE_PERSON_ID
-	c.maxNPopulation = 10
 	return nil
 }

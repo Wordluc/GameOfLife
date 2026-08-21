@@ -40,7 +40,7 @@ func main() {
 
 		if rl.IsKeyPressed(rl.KeyG) {
 			p := rl.GetMousePosition()
-			err = w.AddBlock(core.WHEAT_FIELD, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 3, Y: 3})
+			err = w.AddBlock(core.WHEAT_FIELD, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 1, Y: 1})
 			if err != nil {
 				println(err.Error())
 			}
@@ -54,7 +54,7 @@ func main() {
 		}
 		if rl.IsKeyPressed(rl.KeyH) {
 			p := rl.GetMousePosition()
-			err = w.AddBlock(core.HOUSE, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 3, Y: 3})
+			err = w.AddBlock(core.HOUSE, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 1, Y: 1})
 			if err != nil {
 				println(err.Error())
 			}
@@ -68,7 +68,7 @@ func main() {
 		}
 		if rl.IsKeyPressed(rl.KeyR) {
 			p := rl.GetMousePosition()
-			err = w.AddBlock(core.STONE, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 5, Y: 5})
+			err = w.AddBlock(core.STONE, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 1, Y: 1})
 			if err != nil {
 				println(err.Error())
 			}

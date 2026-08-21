@@ -17,6 +17,7 @@ const (
 	WORKING = "WORKING"
 	MOVING  = "MOVING"
 	DEAD    = "DEAD"
+	IDLE    = "IDLE"
 	STOP    = "STOP"
 )
 
@@ -26,7 +27,7 @@ type Person struct {
 	Job      Job
 	touch    int
 	paths    *common.Queue[common.Vec[int32]]
-	Status   Status
+	status   Status
 	pos      common.Vec[int32]
 }
 

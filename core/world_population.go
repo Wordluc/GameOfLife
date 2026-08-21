@@ -109,10 +109,10 @@ func (w *WorldPopulation) movePersonToGoal(person *Person) error {
 	}
 	to, end := person.paths.Denqueue()
 	if end {
-		person.Status = WORKING
+		person.status = WORKING
 		return nil
 	}
-	person.Status = MOVING
+	person.status = MOVING
 	w.Pos_IdNation_ToIdPeople.MovePerson(person, person.idNation, *from, to)
 	person.pos = to
 	person.TouchMOVE()
