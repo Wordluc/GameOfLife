@@ -38,7 +38,7 @@ func (b bindingCellToPeople) MovePerson(p *Person, idNation ID_NATION, from, to 
 
 type WorldPopulation struct {
 	*World
-	people                  []*Person
+	people                  *common.SortSlice[*Person]
 	toRunPathFinding        bool
 	Pos_IdNation_ToIdPeople bindingCellToPeople
 }
@@ -47,15 +47,20 @@ func NewWorldPopulation(w *World) WorldPopulation {
 	return WorldPopulation{
 		World:                   w,
 		Pos_IdNation_ToIdPeople: make(bindingCellToPeople),
+		people:                  common.NewSortSlice(func(a, b *Person) int { return int(a.id) - int(b.id) }),
 	}
 }
 
 func (w *WorldPopulation) GetPerson(id ID_PERSON) (res *Person) {
-	v := w.GetPeopleCustom(func(p Person) bool { return p.id == id })
+	v := w.people.GetAll()
 	if len(v) == 0 {
 		return nil
 	}
-	return v[0]
+	index, _ := slices.BinarySearchFunc(v, &Person{id: id}, func(a, b *Person) int { return int(a.id - b.id) })
+	if index < 0 {
+		return nil
+	}
+	return v[index]
 }
 
 func (w *WorldPopulation) GetPeopleInsideCell(pos common.Vec[int32], idNation *ID_NATION) (res []ID_PERSON) {
@@ -68,26 +73,30 @@ func (w *WorldPopulation) GetPeopleInsideCell(pos common.Vec[int32], idNation *I
 	return res
 }
 
-func (w *WorldPopulation) GetPeopleCustom(check func(p Person) bool) (res []*Person) {
+func (w *WorldPopulation) GetPeopleCustom(check func(p *Person) bool) (res []*Person) {
 	if check == nil {
-		check = func(p Person) bool { return true }
+		check = func(p *Person) bool { return true }
 	}
-	for i := range w.people {
-		if check(*w.people[i]) {
-			res = append(res, w.people[i])
+	w.people.ForEach(func(index int, value *Person) error {
+		if check(value) {
+			res = append(res, value)
 		}
-	}
+		return nil
+	})
 	return res
 }
 
 func (w *WorldPopulation) newPerson(job Job, where common.Vec[int32], idNation ID_NATION) *Person {
 	p := new(newPerson(job, idNation, where))
-	w.people = append(w.people, p)
+	w.people.Insert(p)
 	w.Pos_IdNation_ToIdPeople.AddNewPerson(p, idNation, where)
 	return p
 }
 
 func (w *WorldPopulation) movePersonToGoal(person *Person) error {
+	if person.IsTouchMOVE() {
+		return nil
+	}
 	if person.paths == nil {
 		return nil
 	}
@@ -106,7 +115,7 @@ func (w *WorldPopulation) movePersonToGoal(person *Person) error {
 	person.Status = MOVING
 	w.Pos_IdNation_ToIdPeople.MovePerson(person, person.idNation, *from, to)
 	person.pos = to
-	person.Touch()
+	person.TouchMOVE()
 	return nil
 }
 

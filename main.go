@@ -4,6 +4,7 @@ import (
 	"GameOfLife/api/graphics"
 	"GameOfLife/common"
 	"GameOfLife/core"
+	"fmt"
 	"math/rand"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -25,7 +26,7 @@ func main() {
 	var err error
 	rl.SetTargetFPS(60)
 	for !rl.WindowShouldClose() {
-		core.TOUCH_ID = rand.Int()
+		core.TOUCH_MOVE_PERSON_ID = rand.Int()
 		rl.ClearBackground(rl.White)
 		rl.BeginDrawing()
 		render.TickPeopleAnimation()
@@ -39,7 +40,7 @@ func main() {
 
 		if rl.IsKeyPressed(rl.KeyG) {
 			p := rl.GetMousePosition()
-			err = w.AddBlock(core.WHEAT_FIELD, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 1, Y: 1})
+			err = w.AddBlock(core.WHEAT_FIELD, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 3, Y: 3})
 			if err != nil {
 				println(err.Error())
 			}
@@ -53,7 +54,7 @@ func main() {
 		}
 		if rl.IsKeyPressed(rl.KeyH) {
 			p := rl.GetMousePosition()
-			err = w.AddBlock(core.HOUSE, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 1, Y: 1})
+			err = w.AddBlock(core.HOUSE, common.Vec[int32]{X: int32(p.X) / SIZE_CELL, Y: int32(p.Y) / SIZE_CELL}, common.Vec[int32]{X: 3, Y: 3})
 			if err != nil {
 				println(err.Error())
 			}
@@ -123,7 +124,7 @@ func main() {
 			timer -= 0.5 // or timer = 0, but -= preserves overshoot accuracy
 		}
 		if 1/rl.GetFrameTime() < 50 {
-			//fmt.Printf("fps:%v people:%v\n", 1/rl.GetFrameTime(), len(w.GetPeople(func(p core.Person) bool { return true })))
+			fmt.Printf("fps:%v people:%v\n", 1/rl.GetFrameTime(), len(w.Populations.GetPeopleCustom(nil)))
 		}
 
 	}

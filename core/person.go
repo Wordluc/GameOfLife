@@ -41,10 +41,10 @@ func newPerson(job Job, idNation ID_NATION, pos common.Vec[int32]) Person {
 	return p
 }
 
-func (p *Person) Touch() {
-	p.touch = TOUCH_ID
+func (p *Person) TouchMOVE() {
+	p.touch = TOUCH_MOVE_PERSON_ID
 }
 
-func (p *Person) IsTouch() bool {
-	return p.touch == TOUCH_ID
+func (p *Person) IsTouchMOVE() bool {
+	return p.touch == TOUCH_MOVE_PERSON_ID
 }

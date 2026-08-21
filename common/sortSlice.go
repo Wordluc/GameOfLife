@@ -33,3 +33,17 @@ func (s *SortSlice[t]) Get(index int) (*t, error) {
 	}
 	return new(s.values[index]), nil
 }
+
+func (s *SortSlice[t]) ForEach(callback func(index int, value t) error) error {
+	for i := range s.values {
+		err := callback(i, s.values[i])
+		if err != nil {
+			return nil
+		}
+	}
+	return nil
+}
+
+func (s *SortSlice[t]) GetAll() []t {
+	return s.values
+}

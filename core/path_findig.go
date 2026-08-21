@@ -100,12 +100,13 @@ func PerformPathFindig(m *Map, start, goal common.Vec[int32]) []common.Vec[int32
 		return func(x, y int32) (stop bool) {
 			pos := common.Vec[int32]{X: x, Y: y}
 			if c, err := m.GetCell(pos); err == nil {
-				if slices.Contains([]CellType{WATER}, c.cellType) {
+				if slices.Contains([]CellType{WATER, STONE}, c.cellType) {
 					return false
 				}
 			}
 
 			weightFromStart := origin.weightFromStart + 2
+			weightToGoal := fromAtoB(pos, goal) * 2
 			if !slices.Contains([]float32{0, 90, 180, 270, 360}, pos.Clone().Sub(goal).Angle()) {
 				weightFromStart += 1
 			}
@@ -114,20 +115,13 @@ func PerformPathFindig(m *Map, start, goal common.Vec[int32]) []common.Vec[int32
 					pos:             pos,
 					origin:          &origin,
 					weightFromStart: weightFromStart,
-					weightToGoal:    fromAtoB(pos, goal),
+					weightToGoal:    weightToGoal,
 				})
 				return true
 			}
-			weightToGoal := fromAtoB(pos, goal)
 			if _, ok := discovered[pos]; ok {
 				return
-				//	if weightToGoal+weightFromStart < explored.weightToGoal+explored.weightFromStart {
-				//		explored.origin = &origin
-				//		explored.weightFromStart = weightFromStart
-				//		explored.weightToGoal = weightToGoal
-				//		delete(discovered, pos)
-				//		toDiscover = InsertSorted(toDiscover, explored)
-				//	}
+
 			}
 			if id := Search(toDiscover, pos); id != -1 {
 				a := toDiscover[id]
@@ -144,7 +138,7 @@ func PerformPathFindig(m *Map, start, goal common.Vec[int32]) []common.Vec[int32
 				pos:             pos,
 				origin:          &origin,
 				weightFromStart: weightFromStart,
-				weightToGoal:    fromAtoB(pos, goal),
+				weightToGoal:    weightToGoal,
 			})
 			return false
 		}

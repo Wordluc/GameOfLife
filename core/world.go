@@ -10,7 +10,7 @@ import (
 
 type ID_NATION int
 
-var TOUCH_ID int
+var TOUCH_MOVE_PERSON_ID int
 
 type bindingCellTypeToCell map[CellType][]common.Vec[int32]
 
@@ -46,56 +46,18 @@ func (w *World) GenerateMap() {
 	})
 }
 
-func (w *World) setWhereToGo(people ...*Person) {
-	type From = common.Vec[int32]
-	type To = common.Vec[int32]
-	//	var cachedPath map[From]map[To]*common.Queue[common.Vec[int32]] = map[From]map[To]*common.Queue[common.Vec[int32]]{}
-	//	getMinPath := func(person *Person, cellsPos []common.Vec[int32]) (goal *BaseCell, pathToGoal *common.Queue[common.Vec[int32]], found bool) {
-	//		//		var path *common.Queue[common.Vec[int32]]
-	//		//		var minPath int = math.MaxInt
-	//		//		var oldGoalPos common.Vec[int32]
-	//		//		if person.paths != nil {
-	//		//			oldGoal, _ := w.Map.GetCell(*person.paths.GetLast())
-	//		//			oldGoal.VirtualNPopulation--
-	//		//			oldGoalPos = oldGoal.pos
-	//		//			if oldGoal.VirtualNPopulation < 0 {
-	//		//				oldGoal.VirtualNPopulation = 0
-	//		//			}
-	//		//		}
-	//		//		for pos := range cells {
-	//		//			if cells[pos].maxNPopulation != 0 && cells[pos].maxNPopulation < cells[pos].VirtualNPopulation+1 {
-	//		//				continue
-	//		//			}
-	//		//			if cachePath[person.pos] != nil && cachePath[person.pos][pos] != nil {
-	//		//				path = cachePath[person.pos][pos].Clone()
-	//		//			} else {
-	//		//				path = common.NewQueue(PerformPathFindig(w.Map, person.pos, pos))
-	//		//				if cachePath[person.pos] == nil {
-	//		//					cachePath[person.pos] = map[common.Vec[int32]]*common.Queue[common.Vec[int32]]{}
-	//		//				}
-	//		//				cachePath[person.pos][pos] = path.Clone()
-	//		//			}
-	//		//			if minPath > path.Len() {
-	//		//				minPath = path.Len()
-	//		//				pathToGoal = path
-	//		//				goal = cells[pos]
-	//		//			}
-	//		//		}
-	//		//		if goal == nil {
-	//		//			return nil, nil, false
-	//		//		}
-	//		//		goal.VirtualNPopulation++
-	//		//		if goal.pos.IsEqual(oldGoalPos) {
-	//		//			return nil, nil, true
-	//		//
-	//		//		}
-	//		//		person.paths = pathToGoal
-	//		return goal, pathToGoal, true
-	//	}
+type From = common.Vec[int32]
+type To = common.Vec[int32]
+
+var cachedPath map[From]map[To][]common.Vec[int32] = map[From]map[To][]common.Vec[int32]{}
+
+func (w *World) setNewPathFinding(people ...*Person) {
 	var cellTypeToGo CellType
 	var posCellsCouldGo []common.Vec[int32]
 	var whereToGo map[ID_PERSON]*common.Queue[common.Vec[int32]] = map[ID_PERSON]*common.Queue[common.Vec[int32]]{}
 	var person *Person
+	var path []common.Vec[int32]
+	var cell *BaseCell
 	for _, person := range people {
 		cellTypeToGo = JobToCells[person.Job]
 		posCellsCouldGo = w.CellType_ToPosCell[cellTypeToGo]
@@ -108,13 +70,40 @@ func (w *World) setWhereToGo(people ...*Person) {
 
 	for idPerson, goals := range whereToGo {
 		person = w.Populations.GetPerson(idPerson)
+		if cachedPath[person.pos] == nil {
+			cachedPath[person.pos] = make(map[To][]common.Vec[int32])
+		}
 		for {
 			goal, end := goals.Denqueue()
 			if end {
 				break
 			}
-			path := PerformPathFindig(w.Map, person.pos, goal)
+			if goal.IsEqual(person.pos) {
+				break
+			}
+
+			if person.paths != nil {
+				cell, _ = w.Map.GetCell(*person.paths.GetLast())
+				cell.VirtualNPopulation--
+				if cell.VirtualNPopulation < 0 {
+					cell.VirtualNPopulation = 0
+				}
+				person.paths = nil
+			}
+
+			if cachedPath[person.pos][goal] != nil {
+				path = cachedPath[person.pos][goal]
+			} else {
+				path = PerformPathFindig(w.Map, person.pos, goal)
+				cachedPath[person.pos][goal] = path
+			}
+
 			if len(path) != 0 {
+				cell, _ = w.Map.GetCell(goal)
+				if cell.VirtualNPopulation >= cell.maxNPopulation {
+					continue
+				}
+				cell.VirtualNPopulation++
 				person.paths = common.NewQueue(path, nil)
 				break
 			}
@@ -164,6 +153,7 @@ func (w *World) AddBlock(cellType CellType, pos common.Vec[int32], size common.V
 		definition.convert(cell)
 	}
 	w.toRunPathFinding = true
+	cachedPath = make(map[From]map[To][]common.Vec[int32])
 	return nil
 }
 
@@ -183,7 +173,7 @@ func (w *World) PerformPathFinding() {
 	if !w.toRunPathFinding {
 		return
 	}
-	w.setWhereToGo(w.Populations.people...)
+	w.setNewPathFinding(w.Populations.people.GetAll()...)
 	w.toRunPathFinding = false
 }
 
@@ -191,8 +181,10 @@ func (w *World) NewPerson(job Job, where common.Vec[int32], idNation ID_NATION) 
 	if !slices.Contains(w.idNations, idNation) {
 		w.idNations = append(w.idNations, idNation)
 	}
-	w.toRunPathFinding = true
-	return w.Populations.newPerson(job, where, idNation)
+	p := w.Populations.newPerson(job, where, idNation)
+	w.setNewPathFinding(p)
+	p.TouchMOVE()
+	return p
 }
 
 func (w *World) MovementSimulation() (err error) {

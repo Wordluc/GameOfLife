@@ -38,11 +38,11 @@ func NewEmptyBaseCell(pos common.Vec[int32]) *BaseCell {
 }
 
 func (BaseCell *BaseCell) Touch() {
-	BaseCell.touch = TOUCH_ID
+	BaseCell.touch = TOUCH_MOVE_PERSON_ID
 }
 
 func (BaseCell *BaseCell) IsTouch() bool {
-	return BaseCell.touch == TOUCH_ID
+	return BaseCell.touch == TOUCH_MOVE_PERSON_ID
 }
 
 func (BaseCell *BaseCell) SetType(t CellType) {
@@ -121,47 +121,47 @@ func GetCellDefinition(t CellType) (CellDefinition, error) {
 
 func ConvertToGrassCell(c *BaseCell) error {
 	c.cellType = GRASS
-	c.touch = TOUCH_ID
+	c.touch = TOUCH_MOVE_PERSON_ID
 	return nil
 }
 
 func ConvertToStoneCell(c *BaseCell) error {
 	c.cellType = STONE
-	c.touch = TOUCH_ID
+	c.touch = TOUCH_MOVE_PERSON_ID
 	return nil
 }
 
 func ConvertToHouseCell(c *BaseCell) error {
 	c.cellType = HOUSE
-	c.touch = TOUCH_ID
+	c.touch = TOUCH_MOVE_PERSON_ID
 	return nil
 }
 func ConvertToWheatCell(c *BaseCell) error {
 	c.cellType = WHEAT_FIELD
-	c.touch = TOUCH_ID
+	c.touch = TOUCH_MOVE_PERSON_ID
 	c.maxNPopulation = 10
 	return nil
 }
 func ConvertToMineCell(c *BaseCell) error {
 	c.cellType = MINE
-	c.touch = TOUCH_ID
+	c.touch = TOUCH_MOVE_PERSON_ID
 	c.maxNPopulation = 10
 	return nil
 }
 func ConvertToForestCell(c *BaseCell) error {
 	c.cellType = FOREST
-	c.touch = TOUCH_ID
+	c.touch = TOUCH_MOVE_PERSON_ID
 	c.maxNPopulation = 10
 	return nil
 }
 func ConvertToWaterCell(c *BaseCell) error {
 	c.cellType = WATER
-	c.touch = TOUCH_ID
+	c.touch = TOUCH_MOVE_PERSON_ID
 	return nil
 }
 func ConvertToDockCell(c *BaseCell) error {
 	c.cellType = DOCK
-	c.touch = TOUCH_ID
+	c.touch = TOUCH_MOVE_PERSON_ID
 	c.maxNPopulation = 10
 	return nil
 }
