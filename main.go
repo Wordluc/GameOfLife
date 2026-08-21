@@ -30,7 +30,7 @@ func main() {
 		rl.BeginDrawing()
 		render.TickPeopleAnimation()
 		err = w.Map.ForEach(func(x, y int32) error {
-			return render.DrawCell(x, y, &w)
+			return render.DrawCell(x, y, w)
 		})
 		if err != nil {
 			panic(err)

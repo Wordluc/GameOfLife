@@ -182,3 +182,7 @@ func CastVec[from, to Number](a Vec[from]) Vec[to] {
 		Y: to(a.Y),
 	}
 }
+
+func CmpVecSort[t Number](a, b Vec[t]) int {
+	return int(DistanceAtoBVecByEuclidean(a, b))
+}

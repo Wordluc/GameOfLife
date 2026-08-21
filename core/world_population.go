@@ -38,15 +38,15 @@ func (b bindingCellToPeople) MovePerson(p *Person, idNation ID_NATION, from, to 
 
 type WorldPopulation struct {
 	*World
-	people              []*Person
-	toRunPathFinding    bool
-	bindingCellToPeople bindingCellToPeople
+	people                  []*Person
+	toRunPathFinding        bool
+	Pos_IdNation_ToIdPeople bindingCellToPeople
 }
 
 func NewWorldPopulation(w *World) WorldPopulation {
 	return WorldPopulation{
-		World:               w,
-		bindingCellToPeople: make(bindingCellToPeople),
+		World:                   w,
+		Pos_IdNation_ToIdPeople: make(bindingCellToPeople),
 	}
 }
 
@@ -60,10 +60,10 @@ func (w *WorldPopulation) GetPerson(id ID_PERSON) (res *Person) {
 
 func (w *WorldPopulation) GetPeopleInsideCell(pos common.Vec[int32], idNation *ID_NATION) (res []ID_PERSON) {
 	if idNation != nil {
-		return w.bindingCellToPeople[pos][*idNation]
+		return w.Pos_IdNation_ToIdPeople[pos][*idNation]
 	}
 	for _, nation := range w.World.idNations {
-		res = append(res, w.bindingCellToPeople[pos][nation]...)
+		res = append(res, w.Pos_IdNation_ToIdPeople[pos][nation]...)
 	}
 	return res
 }
@@ -83,8 +83,7 @@ func (w *WorldPopulation) GetPeopleCustom(check func(p Person) bool) (res []*Per
 func (w *WorldPopulation) newPerson(job Job, where common.Vec[int32], idNation ID_NATION) *Person {
 	p := new(newPerson(job, idNation, where))
 	w.people = append(w.people, p)
-	w.toRunPathFinding = true
-	w.bindingCellToPeople.AddNewPerson(p, idNation, where)
+	w.Pos_IdNation_ToIdPeople.AddNewPerson(p, idNation, where)
 	return p
 }
 
@@ -96,29 +95,37 @@ func (w *WorldPopulation) movePersonToGoal(person *Person) error {
 	if from != nil && !from.IsEqual(person.pos) {
 		return errors.New("Error initial position")
 	}
+	if from == nil {
+		from = &person.pos
+	}
 	to, end := person.paths.Denqueue()
 	if end {
 		person.Status = WORKING
 		return nil
 	}
 	person.Status = MOVING
-	w.bindingCellToPeople.MovePerson(person, person.idNation, *from, to)
+	w.Pos_IdNation_ToIdPeople.MovePerson(person, person.idNation, *from, to)
+	person.pos = to
 	person.Touch()
 	return nil
 }
 
 func (w *WorldPopulation) movePopulationToGoals(idNation ID_NATION) (err error) {
-	for _, populations := range w.bindingCellToPeople {
-		if people := populations[idNation]; people != nil {
-			for _, id := range people {
-				person := w.GetPerson(id)
-				if person == nil {
-					return fmt.Errorf("person not found %v", id)
-				}
-				err = w.movePersonToGoal(person)
-				if err != nil {
-					return err
-				}
+	var people []ID_PERSON
+	var person *Person
+	var id ID_PERSON
+	for _, populations := range w.Pos_IdNation_ToIdPeople {
+		if people = populations[idNation]; people == nil {
+			continue
+		}
+		for _, id = range slices.Clone(people) {
+			person = w.GetPerson(id)
+			if person == nil {
+				return fmt.Errorf("person not found %v", id)
+			}
+			err = w.movePersonToGoal(person)
+			if err != nil {
+				return err
 			}
 		}
 	}

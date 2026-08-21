@@ -2,14 +2,14 @@ package core
 
 import "GameOfLife/common"
 
-var JobToCells = map[Job][]CellType{
-	FARMER:     {WHEAT_FIELD},
-	MINER:      {MINE},
-	WOODCUTTER: {FOREST},
-	FISHERMAN:  {DOCK},
+var JobToCells = map[Job]CellType{
+	FARMER:     WHEAT_FIELD,
+	MINER:      MINE,
+	WOODCUTTER: FOREST,
+	FISHERMAN:  DOCK,
 }
 
-var CellToJobs = common.ReverseMapToSlice(JobToCells)
+var CellToJobs = common.ReverseMapToValue(JobToCells)
 
 var JobToConsumingCost = map[Job][]Quantity[Resource, float32]{
 	FARMER:     {{FOOD, 1}},

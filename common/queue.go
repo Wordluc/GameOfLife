@@ -7,15 +7,18 @@ import (
 type Queue[t any] struct {
 	values []t
 	index  int
+	cmp    func(a, b t) int
 }
 
-func NewQueue[t any](values []t) *Queue[t] {
-	if values == nil {
-		return nil
+func NewQueue[t any](values []t, cmp func(a, b t) int) *Queue[t] {
+	q := &Queue[t]{
+		values: nil,
+		cmp:    cmp,
 	}
-	return &Queue[t]{
-		values: slices.Clone(values),
+	if values != nil {
+		q.Enqueue(values)
 	}
+	return q
 }
 
 func (q *Queue[t]) Len() int {
@@ -27,8 +30,17 @@ func (q *Queue[t]) Reset() {
 	q.values = q.values[:0]
 }
 
-func (q *Queue[t]) Enqueue(v t) {
-	q.values = append(q.values, v)
+func (q *Queue[t]) Enqueue(values []t) {
+	if q.cmp == nil {
+		q.values = append(q.values, values...)
+	} else {
+		for _, v := range values {
+			index, _ := slices.BinarySearchFunc(q.values, v, q.cmp)
+			q.values = append(q.values, *new(t))
+			copy(q.values[index+1:], q.values[index:])
+			q.values[index] = v
+		}
+	}
 }
 
 func (q *Queue[t]) Denqueue() (value t, end bool) {
