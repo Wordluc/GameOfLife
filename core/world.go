@@ -58,8 +58,10 @@ func (w *World) setNewPathFinding(people ...*Person) {
 	var person *Person
 	var path []common.Vec[int32]
 	var cell *BaseCell
+	var goal common.Vec[int32]
+	var end bool
 	//GATHER POSSIBLE PATHS, SORTED BY DISTANCE
-	for _, person := range people {
+	for _, person = range people {
 		cellTypeToGo = JobToCells[person.Job]
 		posCellsCouldGo = w.CellType_ToPosCell[cellTypeToGo]
 		whereToGo[person.id] = common.NewQueue(
@@ -75,7 +77,7 @@ func (w *World) setNewPathFinding(people ...*Person) {
 			cachedPath[person.pos] = make(map[To][]common.Vec[int32])
 		}
 		for {
-			goal, end := goals.Denqueue()
+			goal, end = goals.Denqueue()
 			if end {
 				person.status = IDLE
 				break
