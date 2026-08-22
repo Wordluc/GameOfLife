@@ -57,10 +57,10 @@ func (BaseCell *BaseCell) GetPos() common.Vec[int32] {
 }
 
 type CellDefinition struct {
-	convert         func(*BaseCell) error
-	ConvertibleFrom []CellType
-	maxPeople       int
-	CanConvert      func(pos common.Vec[int32], m *Map) (okToConvert bool)
+	convert     func(*BaseCell) error
+	ConvertFrom []CellType
+	maxPeople   int
+	CanConvert  func(pos common.Vec[int32], m *Map) (okToConvert bool)
 }
 
 var cellsDefinition map[CellType]CellDefinition = map[CellType]CellDefinition{
@@ -68,35 +68,35 @@ var cellsDefinition map[CellType]CellDefinition = map[CellType]CellDefinition{
 		convert: ConvertToGrassCell,
 	},
 	STONE: {
-		convert:         ConvertToStoneCell,
-		ConvertibleFrom: []CellType{GRASS, STONE},
+		convert:     ConvertToStoneCell,
+		ConvertFrom: []CellType{GRASS, STONE},
 	},
 	HOUSE: {
-		convert:         ConvertToHouseCell,
-		ConvertibleFrom: []CellType{GRASS, HOUSE},
+		convert:     ConvertToHouseCell,
+		ConvertFrom: []CellType{GRASS, HOUSE},
 	},
 	WHEAT_FIELD: {
-		convert:         ConvertToWheatCell,
-		ConvertibleFrom: []CellType{GRASS, WHEAT_FIELD},
-		maxPeople:       10,
+		convert:     ConvertToWheatCell,
+		ConvertFrom: []CellType{GRASS, WHEAT_FIELD},
+		maxPeople:   10,
 	},
 	MINE: {
-		convert:         ConvertToMineCell,
-		ConvertibleFrom: []CellType{STONE, MINE},
-		maxPeople:       10,
+		convert:     ConvertToMineCell,
+		ConvertFrom: []CellType{STONE, MINE},
+		maxPeople:   10,
 	},
 	FOREST: {
-		convert:         ConvertToForestCell,
-		ConvertibleFrom: []CellType{FOREST, GRASS, WHEAT_FIELD},
-		maxPeople:       10,
+		convert:     ConvertToForestCell,
+		ConvertFrom: []CellType{FOREST, GRASS, WHEAT_FIELD},
+		maxPeople:   10,
 	},
 	WATER: {
 		convert: ConvertToWaterCell,
 	},
 	DOCK: {
-		convert:         ConvertToDockCell,
-		ConvertibleFrom: []CellType{WATER},
-		maxPeople:       10,
+		convert:     ConvertToDockCell,
+		ConvertFrom: []CellType{WATER},
+		maxPeople:   10,
 		CanConvert: func(pos common.Vec[int32], m *Map) (okToConvert bool) {
 			neir, _ := m.GetNeighborhoodCells(pos, common.Vec[int32]{X: 3, Y: 3})
 			waterCount := 0
