@@ -102,7 +102,7 @@ var cellsDefinition map[CellType]CellDefinition = map[CellType]CellDefinition{
 			waterCount := 0
 			dockOrGrassCount := 0
 			for posNeighbord, cell := range neir {
-				diff := posNeighbord.Sub(pos)
+				diff := posNeighbord.Clone().Sub(pos)
 				if diff.X != 0 && diff.Y != 0 {
 					// diagonal, skip
 					continue

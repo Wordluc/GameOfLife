@@ -138,16 +138,16 @@ func (w *World) AddBlock(cellType CellType, pos common.Vec[int32], size common.V
 	if err != nil {
 		return err
 	}
-	if definition.ConvertFrom != nil {
-		for _, n := range neighborhood {
+	for _, n := range neighborhood {
+		if definition.ConvertFrom != nil {
 			if !slices.Contains(definition.ConvertFrom, n.GetType()) {
 				return fmt.Errorf("%v not support in %v", cellType, neighborhood[pos].GetType())
 			}
 		}
-	}
-	if definition.CanConvert != nil {
-		if !definition.CanConvert(pos, w.Map) {
-			return fmt.Errorf("CanConvert %v failed", cellType)
+		if definition.CanConvert != nil {
+			if !definition.CanConvert(pos, w.Map) {
+				return fmt.Errorf("CanConvert %v failed", cellType)
+			}
 		}
 	}
 	for pos := range neighborhood {
