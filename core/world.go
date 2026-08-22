@@ -58,6 +58,7 @@ func (w *World) setNewPathFinding(people ...*Person) {
 	var person *Person
 	var path []common.Vec[int32]
 	var cell *BaseCell
+	//GATHER POSSIBLE PATHS, SORTED BY DISTANCE
 	for _, person := range people {
 		cellTypeToGo = JobToCells[person.Job]
 		posCellsCouldGo = w.CellType_ToPosCell[cellTypeToGo]
@@ -67,7 +68,7 @@ func (w *World) setNewPathFinding(people ...*Person) {
 				return cmp.Compare(fromAtoB(person.pos, a), fromAtoB(person.pos, b))
 			})
 	}
-
+	//ASSIGN FIRST POSSIBLE PATH
 	for idPerson, goals := range whereToGo {
 		person = w.Populations.GetPerson(idPerson)
 		if cachedPath[person.pos] == nil {
@@ -76,6 +77,7 @@ func (w *World) setNewPathFinding(people ...*Person) {
 		for {
 			goal, end := goals.Denqueue()
 			if end {
+				person.status = IDLE
 				break
 			}
 			if goal.IsEqual(person.pos) {
@@ -105,11 +107,10 @@ func (w *World) setNewPathFinding(people ...*Person) {
 				}
 				cell.VirtualNPopulation++
 				person.paths = common.NewQueue(path, nil)
+				//REMOVE FIRST ELEMENT, THE ORIDIN (person.pos)
+				person.paths.Denqueue()
 				break
 			}
-		}
-		if person.paths == nil {
-			person.status = IDLE
 		}
 	}
 }

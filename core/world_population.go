@@ -104,9 +104,7 @@ func (w *WorldPopulation) movePersonToGoal(person *Person) error {
 	if from != nil && !from.IsEqual(person.pos) {
 		return errors.New("Error initial position")
 	}
-	if from == nil {
-		from = &person.pos
-	}
+
 	to, end := person.paths.Denqueue()
 	if end {
 		person.status = WORKING
