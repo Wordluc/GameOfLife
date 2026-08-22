@@ -5,6 +5,7 @@ import (
 	"cmp"
 	"errors"
 	"fmt"
+	"math/rand"
 	"slices"
 )
 
@@ -23,7 +24,7 @@ func (b bindingCellTypeToCell) SetCellTypeCell(cell *BaseCell, newCellType CellT
 type World struct {
 	Map                *Map
 	Populations        *WorldPopulation
-	resources          map[Resource]float32
+	resources          map[ID_NATION]map[Resource]float32
 	toRunPathFinding   bool
 	CellType_ToPosCell bindingCellTypeToCell
 	idNations          []ID_NATION
@@ -32,8 +33,8 @@ type World struct {
 func NewWorld(size common.Vec[int32]) (w *World) {
 	w = &World{}
 	w.Map = new(NewMap(size))
-	w.resources = map[Resource]float32{
-		FOOD: 1000,
+	w.resources = map[ID_NATION]map[Resource]float32{
+		0: {FOOD: 1000},
 	}
 	w.Populations = new(NewWorldPopulation(w))
 	w.CellType_ToPosCell = make(bindingCellTypeToCell)
@@ -41,8 +42,11 @@ func NewWorld(size common.Vec[int32]) (w *World) {
 }
 
 func (w *World) GenerateMap() {
+	var c *BaseCell
 	w.Map.ForeachCell(func(x, y int32) *BaseCell {
-		return NewEmptyBaseCell(common.Vec[int32]{X: x, Y: y})
+		c = NewEmptyBaseCell(common.Vec[int32]{X: x, Y: y})
+		w.CellType_ToPosCell.SetCellTypeCell(c, GRASS)
+		return c
 	})
 }
 
@@ -62,6 +66,9 @@ func (w *World) setNewPathFinding(people ...*Person) {
 	var end bool
 	//GATHER POSSIBLE PATHS, SORTED BY DISTANCE
 	for _, person = range people {
+		if person.status == DEAD {
+			continue
+		}
 		cellTypeToGo = JobToCells[person.Job]
 		posCellsCouldGo = w.CellType_ToPosCell[cellTypeToGo]
 		whereToGo[person.id] = common.NewQueue(
@@ -89,9 +96,6 @@ func (w *World) setNewPathFinding(people ...*Person) {
 			if person.paths != nil {
 				cell, _ = w.Map.GetCell(*person.paths.GetLast())
 				cell.VirtualNPopulation--
-				if cell.VirtualNPopulation < 0 {
-					cell.VirtualNPopulation = 0
-				}
 				person.paths = nil
 			}
 
@@ -109,7 +113,7 @@ func (w *World) setNewPathFinding(people ...*Person) {
 				}
 				cell.VirtualNPopulation++
 				person.paths = common.NewQueue(path, nil)
-				//REMOVE FIRST ELEMENT, THE ORIDIN (person.pos)
+				//REMOVE FIRST ELEMENT, THE ORIGIN (person.pos)
 				person.paths.Denqueue()
 				break
 			}
@@ -218,43 +222,64 @@ func (w *World) MovementSimulation() (err error) {
 	return nil
 }
 
-func (w *World) ResourcesCounting() error {
-	n := 0
+func (w *World) HarvestingSimulation() error {
 	for _, idNation := range w.idNations {
 		for celltype, cellsPos := range w.CellType_ToPosCell {
 			for _, pos := range cellsPos {
-				n = len(w.Populations.Pos_IdNation_ToIdPeople[pos][idNation])
+				n := len(w.Populations.Pos_IdNation_ToIdPeople[pos][idNation])
 				for _, q := range CellTypeToResource[celltype] {
-					w.resources[q.What] += float32(n) * q.Amount
+					w.resources[idNation][q.What] += float32(n) * q.Amount
 				}
 			}
 		}
+
 	}
-	//
-	//	fmt.Printf("%v\n", w.resources)
-	//	var maxTime = 10
-	//	if w.resources[FOOD] < -100 {
-	//		r := rand.Intn(len(w.people))
-	//		for {
-	//			if maxTime == 0 {
-	//				return nil
-	//			}
-	//			if w.people[r].Status == DEAD {
-	//				r = rand.Intn(len(w.people))
-	//				maxTime--
-	//				continue
-	//			}
-	//			if w.people[r].Status == MOVING && w.people[r].paths != nil {
-	//				p := w.people[r].paths.GetLast()
-	//				c, _ := w.Map.GetCell(*p)
-	//				c.VirtualNPopulation--
-	//				w.toRunPathFinding = true
-	//			} else if w.people[r].Status == WORKING {
-	//				w.people[r].currentCell.VirtualNPopulation--
-	//			}
-	//			w.people[r].Status = DEAD
-	//			w.people[r].Touch()
-	//		}
-	//	}
+	for _, person := range w.Populations.people.GetAll() {
+		if person.status == DEAD {
+			continue
+		}
+		for _, q := range JobToConsumingCost[person.Job] {
+			w.resources[person.idNation][q.What] -= q.Amount
+		}
+
+	}
+	return nil
+}
+
+func (w *World) StarvingSimulation() error {
+	for _, idNation := range w.idNations {
+		if w.resources[idNation][FOOD] > -100 {
+			continue
+		}
+		var maxTime = 10
+		population := w.Populations.people.GetAll()
+		r := rand.Intn(len(population))
+		var person *Person
+		for {
+			if maxTime == 0 {
+				continue
+			}
+			person = population[r]
+			//TO OPTIMIZE
+			if person.idNation != idNation {
+				r = rand.Intn(len(population))
+				continue
+			}
+			if person.status == DEAD {
+				r = rand.Intn(len(population))
+				maxTime--
+				break
+			}
+			if person.paths != nil {
+				lastPosCell := person.paths.GetLast()
+				lastCell, _ := w.Map.GetCell(*lastPosCell)
+				lastCell.VirtualNPopulation--
+			}
+			person.status = DEAD
+			w.Populations.Pos_IdNation_ToIdPeople.RemovePerson(person)
+			w.toRunPathFinding = true
+			break
+		}
+	}
 	return nil
 }

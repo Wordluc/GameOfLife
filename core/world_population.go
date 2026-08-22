@@ -23,21 +23,26 @@ func (b bindingCellToPeople) checkConsitancy(idNation ID_NATION, pos common.Vec[
 		b[pos][idNation] = make([]ID_PERSON, 0)
 	}
 }
-func (b bindingCellToPeople) AddNewPerson(p *Person, idNation ID_NATION, pos common.Vec[int32]) {
-	b.checkConsitancy(idNation, pos)
-	b[pos][idNation] = append(b[pos][idNation], p.id)
+func (b bindingCellToPeople) AddNewPerson(p *Person, pos common.Vec[int32]) {
+	b.checkConsitancy(p.idNation, pos)
+	b[pos][p.idNation] = append(b[pos][p.idNation], p.id)
 	p.pos = pos
 }
 
-func (b bindingCellToPeople) MovePerson(p *Person, idNation ID_NATION, from, to common.Vec[int32]) {
-	b.checkConsitancy(idNation, from)
-	b.checkConsitancy(idNation, to)
-	b[from][idNation] = slices.DeleteFunc(b[from][idNation], func(id ID_PERSON) bool { return p.id == id })
-	b[to][idNation] = append(b[to][idNation], p.id)
+func (b bindingCellToPeople) MovePerson(p *Person, from, to common.Vec[int32]) {
+	b.checkConsitancy(p.idNation, from)
+	b.checkConsitancy(p.idNation, to)
+	b[from][p.idNation] = slices.DeleteFunc(b[from][p.idNation], func(id ID_PERSON) bool { return p.id == id })
+	b[to][p.idNation] = append(b[to][p.idNation], p.id)
+}
+
+func (b bindingCellToPeople) RemovePerson(p *Person) {
+	b[p.pos][p.idNation] = slices.DeleteFunc(b[p.pos][p.idNation], func(id ID_PERSON) bool { return p.id == id })
 }
 
 type WorldPopulation struct {
 	*World
+	//TODO: has to use ID_NATION
 	people                  *common.SortSlice[*Person]
 	toRunPathFinding        bool
 	Pos_IdNation_ToIdPeople bindingCellToPeople
@@ -89,7 +94,7 @@ func (w *WorldPopulation) GetPeopleCustom(check func(p *Person) bool) (res []*Pe
 func (w *WorldPopulation) newPerson(job Job, where common.Vec[int32], idNation ID_NATION) *Person {
 	p := new(newPerson(job, idNation, where))
 	w.people.Insert(p)
-	w.Pos_IdNation_ToIdPeople.AddNewPerson(p, idNation, where)
+	w.Pos_IdNation_ToIdPeople.AddNewPerson(p, where)
 	return p
 }
 
@@ -111,7 +116,7 @@ func (w *WorldPopulation) movePersonToGoal(person *Person) error {
 		return nil
 	}
 	person.status = MOVING
-	w.Pos_IdNation_ToIdPeople.MovePerson(person, person.idNation, *from, to)
+	w.Pos_IdNation_ToIdPeople.MovePerson(person, *from, to)
 	person.pos = to
 	person.TouchMOVE()
 	return nil

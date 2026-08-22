@@ -12,7 +12,7 @@ var JobToCells = map[Job]CellType{
 var CellToJobs = common.ReverseMapToValue(JobToCells)
 
 var JobToConsumingCost = map[Job][]Quantity[Resource, float32]{
-	FARMER:     {{FOOD, 1}},
+	FARMER:     {{FOOD, 3}},
 	MINER:      {{FOOD, 1}},
 	WOODCUTTER: {{FOOD, 1}},
 	FISHERMAN:  {{FOOD, 1.5}},

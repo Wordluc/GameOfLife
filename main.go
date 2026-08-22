@@ -116,7 +116,8 @@ func main() {
 		timer += rl.GetFrameTime()
 		if timer >= 0.5 {
 			w.PerformPathFinding()
-			w.ResourcesCounting()
+			w.HarvestingSimulation()
+			w.StarvingSimulation()
 			err := w.MovementSimulation()
 			if err != nil {
 				panic(err)

@@ -31,8 +31,7 @@ type BaseCell struct {
 
 func NewEmptyBaseCell(pos common.Vec[int32]) *BaseCell {
 	return &BaseCell{
-		pos:      pos,
-		cellType: GRASS,
+		pos: pos,
 	}
 }
 
