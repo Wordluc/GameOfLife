@@ -125,7 +125,7 @@ func main() {
 			timer -= 0.5 // or timer = 0, but -= preserves overshoot accuracy
 		}
 		if 1/rl.GetFrameTime() < 50 {
-			fmt.Printf("fps:%v people:%v\n", 1/rl.GetFrameTime(), len(w.Populations.GetPeopleCustom(nil)))
+			fmt.Printf("fps:%v\n", 1/rl.GetFrameTime())
 		}
 
 	}

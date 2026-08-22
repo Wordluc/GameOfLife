@@ -72,7 +72,7 @@ func (w *WorldPopulation) GetPeopleInsideCell(pos common.Vec[int32], idNation *I
 	if idNation != nil {
 		return w.Pos_IdNation_ToIdPeople[pos][*idNation]
 	}
-	for _, nation := range w.World.idNations {
+	for _, nation := range w.World.IdNations {
 		res = append(res, w.Pos_IdNation_ToIdPeople[pos][nation]...)
 	}
 	return res

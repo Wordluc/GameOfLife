@@ -48,7 +48,10 @@ func (r *RaylibRender) DrawCell(x, y int32, w *core.World) error {
 
 	cellX := r.SizeCell.X * x
 	cellY := r.SizeCell.Y * y
-	n := len(w.Populations.GetPeopleInsideCell(pos, nil))
+	var n int
+	for i := range w.IdNations {
+		n += len(w.Populations[w.IdNations[i]].GetPeopleInsideCell(pos, nil))
+	}
 	rl.DrawRectangle(cellX, cellY, r.SizeCell.X, r.SizeCell.Y, color)
 	rl.DrawText(fmt.Sprint(cell.VirtualNPopulation), cellX, cellY, 3, rl.Red)
 	rl.DrawText(fmt.Sprint(n), cellX+10, cellY, 3, rl.Red)
