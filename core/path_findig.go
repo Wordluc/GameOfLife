@@ -4,8 +4,6 @@ import (
 	"GameOfLife/common"
 	"slices"
 	"sort"
-
-	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 type pathFindigInformation struct {
@@ -57,7 +55,7 @@ func InsertSorted(s []*pathFindigInformation, e *pathFindigInformation) []*pathF
 }
 
 func fromAtoB(a, b common.Vec[int32]) int32 {
-	return common.DistanceAtoBVecShev(a, b)
+	return common.DistanceAtoBVecByEuclidean(a, b)
 }
 
 func foreachNeighboarhood(m *Map, pos common.Vec[int32], callback func(x, y int32) (stop bool)) {
@@ -83,11 +81,6 @@ func foreachNeighboarhood(m *Map, pos common.Vec[int32], callback func(x, y int3
 			}
 		}
 	}
-}
-func drawDebugCell(pos common.Vec[int32], c rl.Color) {
-	rl.BeginDrawing()
-	rl.DrawRectangle(pos.X*30, pos.Y*30, 30, 30, c)
-	rl.EndDrawing()
 }
 func isDiagonal(a, b common.Vec[int32]) bool {
 	diff := a.Sub(b)
