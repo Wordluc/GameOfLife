@@ -17,7 +17,7 @@ func approssimare(a float32, t int) float32 {
 	return float32(math.Floor(float64(a*float32(math.Pow10(t)))) / math.Pow10(t))
 }
 
-var fullscreen bool = true
+var fullscreen bool = false
 
 func main() {
 	var render graphics.Render = new(graphics.RaylibRender{
@@ -116,7 +116,7 @@ func main() {
 		rl.EndDrawing()
 
 		if rl.IsKeyPressed(rl.KeyG) {
-			err = w.AddBlock(core.WHEAT_FIELD, getPosMouse(), common.Vec[int32]{X: 1, Y: 1})
+			err = w.AddBlock(core.WHEAT_FIELD, getPosMouse(), common.Vec[int32]{X: 3, Y: 3})
 			if err != nil {
 				println(err.Error())
 			}
@@ -128,7 +128,7 @@ func main() {
 			}
 		}
 		if rl.IsKeyPressed(rl.KeyH) {
-			err = w.AddBlock(core.HOUSE, getPosMouse(), common.Vec[int32]{X: 1, Y: 1})
+			err = w.AddBlock(core.HOUSE, getPosMouse(), common.Vec[int32]{X: 3, Y: 3})
 			if err != nil {
 				println(err.Error())
 			}
@@ -184,8 +184,8 @@ func main() {
 			}
 		}
 		timer += rl.GetFrameTime()
+		w.PerformPathFinding()
 		if timer >= 0.5 {
-			w.PerformPathFinding()
 			w.HarvestingSimulation()
 			w.StarvingSimulation()
 			err := w.MovementSimulation()

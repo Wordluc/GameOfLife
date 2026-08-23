@@ -27,7 +27,7 @@ func (q *Queue[t]) Len() int {
 
 func (q *Queue[t]) Reset() {
 	q.index = 0
-	q.values = q.values[:0]
+	q.values = nil
 }
 
 func (q *Queue[t]) Enqueue(values []t) {
@@ -43,7 +43,24 @@ func (q *Queue[t]) Enqueue(values []t) {
 	}
 }
 
+func (q *Queue[t]) DenqueueN(n int) (values []t, end bool) {
+	if q.values == nil {
+		return nil, false
+	}
+	if q.index+n+1 >= len(q.values) {
+		values = q.values[q.index:]
+		q.index = len(q.values)
+		return values, true
+	}
+	values = q.values[q.index : q.index+n]
+	q.index += n
+	return values, false
+}
+
 func (q *Queue[t]) Denqueue() (value t, end bool) {
+	if q.values == nil {
+		return value, false
+	}
 	if q.index >= len(q.values) {
 		return value, true
 	}

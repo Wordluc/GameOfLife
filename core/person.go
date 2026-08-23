@@ -9,6 +9,7 @@ const (
 	MINER      = "MINER"
 	WOODCUTTER = "WOODCUTTER"
 	FISHERMAN  = "FISHERMAN"
+	ZOMBIE     = "ZOMBIE"
 )
 
 type Status string

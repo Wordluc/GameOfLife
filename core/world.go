@@ -21,13 +21,20 @@ func (b bindingCellTypeToCell) SetCellTypeCell(cell *BaseCell, newCellType CellT
 	cell.cellType = newCellType
 }
 
+type Player struct {
+	visualPos common.Vec[float32]
+	logic     common.Vec[int32]
+}
+
 type World struct {
 	Map                *Map
 	Populations        map[ID_NATION]*WorldPopulation
 	resources          map[ID_NATION]map[Resource]float32
-	toRunPathFinding   bool
 	CellType_ToPosCell bindingCellTypeToCell
 	IdNations          []ID_NATION
+	players            []Player
+
+	personNeedingPathFinding *common.Queue[*Person]
 }
 
 func NewWorld(size common.Vec[int32]) (w *World) {
@@ -36,6 +43,7 @@ func NewWorld(size common.Vec[int32]) (w *World) {
 	w.resources = map[ID_NATION]map[Resource]float32{}
 	w.Populations = map[ID_NATION]*WorldPopulation{}
 	w.CellType_ToPosCell = make(bindingCellTypeToCell)
+	w.personNeedingPathFinding = common.NewQueue[*Person](nil, nil)
 	return w
 }
 
@@ -46,6 +54,16 @@ func (w *World) GenerateMap() {
 		w.CellType_ToPosCell.SetCellTypeCell(c, GRASS)
 		return c
 	})
+}
+
+func (w *World) toRunPathFinding(ps ...*Person) {
+	w.personNeedingPathFinding.Enqueue(ps)
+}
+
+func (w *World) toRunPathFindingForAll() {
+	for i := range w.IdNations {
+		w.personNeedingPathFinding.Enqueue(w.Populations[w.IdNations[i]].people.GetAll())
+	}
 }
 
 type From = common.Vec[int32]
@@ -158,7 +176,6 @@ func (w *World) AddBlock(cellType CellType, pos common.Vec[int32], size common.V
 			return err
 		}
 	}
-	w.toRunPathFinding = true
 	t := make(map[From]map[To][]common.Vec[int32])
 	for from, paths := range cachedPath {
 		for to, path := range paths {
@@ -172,6 +189,7 @@ func (w *World) AddBlock(cellType CellType, pos common.Vec[int32], size common.V
 		}
 	}
 	cachedPath = t
+	w.toRunPathFindingForAll()
 	return nil
 }
 
@@ -188,13 +206,14 @@ func (w *World) GetCellsByType(cellType CellType) (res []*BaseCell, err error) {
 }
 
 func (w *World) PerformPathFinding() {
-	if !w.toRunPathFinding {
+	ps, end := w.personNeedingPathFinding.DenqueueN(10)
+	if end {
+		w.personNeedingPathFinding.Reset()
+	}
+	if ps == nil {
 		return
 	}
-	for i := range w.IdNations {
-		w.setNewPathFinding(w.Populations[w.IdNations[i]].people.GetAll()...)
-	}
-	w.toRunPathFinding = false
+	w.setNewPathFinding(ps...)
 }
 
 func (w *World) NewNation(idNation ID_NATION, resource map[Resource]float32) {
@@ -208,8 +227,8 @@ func (w *World) NewPerson(job Job, where common.Vec[int32], idNation ID_NATION) 
 		w.NewNation(idNation, map[Resource]float32{FOOD: 1000})
 	}
 	p := w.Populations[idNation].newPerson(job, where, idNation)
-	w.setNewPathFinding(p)
 	p.TouchMOVE()
+	w.toRunPathFinding(p)
 	return p
 }
 
@@ -274,7 +293,7 @@ func (w *World) StarvingSimulation() error {
 			}
 			person.status = DEAD
 			w.Populations[idNation].Pos_IdNation_ToIdPeople.RemovePerson(person)
-			w.toRunPathFinding = true
+			w.toRunPathFindingForAll()
 			break
 		}
 	}
