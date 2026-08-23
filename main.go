@@ -32,6 +32,7 @@ func main() {
 
 	rl.SetConfigFlags(rl.FlagWindowHighdpi)
 	rl.InitWindow(visibleWindow.X, visibleWindow.Y, "ciao")
+	dpiScale := rl.GetWindowScaleDPI()
 	if fullscreen {
 		rl.ToggleFullscreen()
 	}
@@ -72,10 +73,8 @@ func main() {
 	getPosMouse := func() common.Vec[int32] {
 		p := rl.GetMousePosition()
 		if fullscreen {
-			monitorW := float32(rl.GetMonitorWidth(rl.GetCurrentMonitor()))
-			dpiScale := screenW / monitorW // measured, not GetWindowScaleDPI()
-			p.X *= dpiScale
-			p.Y *= dpiScale
+			p.X *= dpiScale.X
+			p.Y *= dpiScale.Y
 		}
 
 		texX := (p.X - destX) * (virtualW / destW)
