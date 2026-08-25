@@ -214,7 +214,6 @@ func (w *World) GetCellsByType(cellType CellType) (res []*BaseCell, err error) {
 
 func (w *World) PerformPathFinding() {
 	ps, end := w.personNeedingPathFinding.DenqueueN(10)
-	fmt.Println(len(ps), end)
 	if ps == nil {
 		return
 	}
