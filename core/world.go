@@ -27,42 +27,44 @@ type Player struct {
 }
 
 type World struct {
-	Map                *Map
-	Populations        map[ID_NATION]*WorldPopulation
+	Map                *Map[BaseCell]
+	Nation             map[ID_NATION]*Nation
+	Zombies            *ZombieHorde
 	resources          map[ID_NATION]map[Resource]float32
 	CellType_ToPosCell bindingCellTypeToCell
 	IdNations          []ID_NATION
 	players            []Player
 
-	personNeedingPathFinding *common.Queue[*Person]
+	personNeedingPathFinding *common.Queue[*Agent]
 }
 
 func NewWorld(size common.Vec[int32]) (w *World) {
 	w = &World{}
-	w.Map = new(NewMap(size))
+	w.Map = new(NewMap[BaseCell](size))
 	w.resources = map[ID_NATION]map[Resource]float32{}
-	w.Populations = map[ID_NATION]*WorldPopulation{}
+	w.Nation = map[ID_NATION]*Nation{}
 	w.CellType_ToPosCell = make(bindingCellTypeToCell)
-	w.personNeedingPathFinding = common.NewQueue[*Person](nil, nil)
+	w.personNeedingPathFinding = common.NewQueue[*Agent](nil, nil)
+	w.Zombies = new(NewZombieHorde(w))
 	return w
 }
 
 func (w *World) GenerateMap() {
 	var c *BaseCell
-	w.Map.ForeachCell(func(x, y int32) *BaseCell {
+	w.Map.SetEachElement(func(x, y int32) *BaseCell {
 		c = NewEmptyBaseCell(common.Vec[int32]{X: x, Y: y})
 		w.CellType_ToPosCell.SetCellTypeCell(c, GRASS)
 		return c
 	})
 }
 
-func (w *World) toRunPathFinding(ps ...*Person) {
-	w.personNeedingPathFinding.Enqueue(ps)
+func (w *World) toRunPathFinding(ps ...*Agent) {
+	w.personNeedingPathFinding.Enqueue(ps...)
 }
 
 func (w *World) toRunPathFindingForAll() {
 	for i := range w.IdNations {
-		w.personNeedingPathFinding.Enqueue(w.Populations[w.IdNations[i]].people.GetAll())
+		w.personNeedingPathFinding.Enqueue(w.Nation[w.IdNations[i]].agents.GetAll()...)
 	}
 }
 
@@ -71,21 +73,29 @@ type To = common.Vec[int32]
 
 var cachedPath map[From]map[To][]common.Vec[int32] = map[From]map[To][]common.Vec[int32]{}
 
-func (w *World) setNewPathFinding(people ...*Person) {
+func (w *World) setNewPathFindingForWorker(person *Agent) {
+}
+func (w *World) setNewPathFinding(people ...*Agent) {
+	var person *Agent
 	var cellTypeToGo CellType
 	var posCellsCouldGo []common.Vec[int32]
-	var person *Person
 	var path []common.Vec[int32]
 	var cell *BaseCell
 	var goal common.Vec[int32]
 	var end bool
 	//GATHER POSSIBLE PATHS, SORTED BY DISTANCE
 	for _, person = range people {
-		if person.status == DEAD {
+		if person.Status == DEAD {
+			continue
+		}
+		if person.Job == ZOMBIE {
 			continue
 		}
 		cellTypeToGo = JobToCells[person.Job]
 		posCellsCouldGo = w.CellType_ToPosCell[cellTypeToGo]
+		if len(posCellsCouldGo) == 0 {
+			continue
+		}
 		goals := common.NewQueue(
 			posCellsCouldGo,
 			func(a, b common.Vec[int32]) int {
@@ -97,7 +107,7 @@ func (w *World) setNewPathFinding(people ...*Person) {
 		for {
 			goal, end = goals.Denqueue()
 			if end {
-				person.status = IDLE
+				person.Status = IDLE
 				break
 			}
 			if goal.IsEqual(person.pos) {
@@ -113,7 +123,7 @@ func (w *World) setNewPathFinding(people ...*Person) {
 			if cachedPath[person.pos][goal] != nil {
 				path = cachedPath[person.pos][goal]
 			} else {
-				path = PerformPathFindig(w.Map, person.pos, goal)
+				path = PerformPathFinding_A(w.Map, person.pos, goal)
 				cachedPath[person.pos][goal] = path
 			}
 
@@ -207,26 +217,30 @@ func (w *World) GetCellsByType(cellType CellType) (res []*BaseCell, err error) {
 
 func (w *World) PerformPathFinding() {
 	ps, end := w.personNeedingPathFinding.DenqueueN(10)
-	if end {
-		w.personNeedingPathFinding.Reset()
-	}
 	if ps == nil {
 		return
 	}
 	w.setNewPathFinding(ps...)
+	if end {
+		w.personNeedingPathFinding.Reset()
+	}
 }
 
 func (w *World) NewNation(idNation ID_NATION, resource map[Resource]float32) {
-	w.Populations[idNation] = new(NewWorldPopulation(w))
+	w.Nation[idNation] = new(NewNation(w, idNation))
 	w.IdNations = append(w.IdNations, idNation)
 	w.resources[idNation] = resource
 }
 
-func (w *World) NewPerson(job Job, where common.Vec[int32], idNation ID_NATION) *Person {
+func (w *World) NewZombie(where common.Vec[int32]) *Agent {
+	return w.Zombies.newAgent(ZOMBIE, where)
+}
+
+func (w *World) NewPerson(job Job, where common.Vec[int32], idNation ID_NATION) *Agent {
 	if !slices.Contains(w.IdNations, idNation) {
 		w.NewNation(idNation, map[Resource]float32{FOOD: 1000})
 	}
-	p := w.Populations[idNation].newPerson(job, where, idNation)
+	p := w.Nation[idNation].newAgent(job, where)
 	p.TouchMOVE()
 	w.toRunPathFinding(p)
 	return p
@@ -234,10 +248,14 @@ func (w *World) NewPerson(job Job, where common.Vec[int32], idNation ID_NATION) 
 
 func (w *World) MovementSimulation() (err error) {
 	for i := range w.IdNations {
-		err = w.Populations[w.IdNations[i]].movePopulationToGoals(w.IdNations[i])
+		err = w.Nation[w.IdNations[i]].moveAgentsToGoals()
 		if err != nil {
 			return err
 		}
+	}
+	err = w.Zombies.moveAgentsToGoals()
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -246,15 +264,15 @@ func (w *World) HarvestingSimulation() error {
 	for _, idNation := range w.IdNations {
 		for celltype, cellsPos := range w.CellType_ToPosCell {
 			for _, pos := range cellsPos {
-				n := len(w.Populations[idNation].Pos_IdNation_ToIdPeople[pos][idNation])
+				n := len(w.Nation[idNation].PosToIdAgent[pos])
 				for _, q := range CellTypeToResource[celltype] {
 					w.resources[idNation][q.What] += float32(n) * q.Amount
 				}
 			}
 		}
 
-		for _, person := range w.Populations[idNation].people.GetAll() {
-			if person.status == DEAD {
+		for _, person := range w.Nation[idNation].agents.GetAll() {
+			if person.Status == DEAD {
 				continue
 			}
 			for _, q := range JobToConsumingCost[person.Job] {
@@ -272,16 +290,16 @@ func (w *World) StarvingSimulation() error {
 			continue
 		}
 		var maxTime = 10
-		population := w.Populations[idNation].people.GetAll()
+		population := w.Nation[idNation].agents.GetAll()
 		r := rand.Intn(len(population))
-		var person *Person
+		var person *Agent
 		for {
 			if maxTime == 0 {
 				continue
 			}
 			person = population[r]
 			//TO OPTIMIZE
-			if person.status == DEAD {
+			if person.Status == DEAD {
 				r = rand.Intn(len(population))
 				maxTime--
 				break
@@ -291,11 +309,63 @@ func (w *World) StarvingSimulation() error {
 				lastCell, _ := w.Map.GetCell(*lastPosCell)
 				lastCell.VirtualNPopulation--
 			}
-			person.status = DEAD
-			w.Populations[idNation].Pos_IdNation_ToIdPeople.RemovePerson(person)
+			person.Status = DEAD
+			w.Nation[idNation].PosToIdAgent[person.pos] = slices.DeleteFunc(w.Nation[idNation].PosToIdAgent[person.pos], func(a ID_AGENT) bool { return person.id == a })
 			w.toRunPathFindingForAll()
 			break
 		}
+	}
+	return nil
+}
+func (w *World) RefreshZombieVision() error {
+	peoplePos := []common.Vec[int32]{}
+	for _, nation := range w.Nation {
+		for pos, l := range nation.PosToIdAgent {
+			if len(l) == 0 {
+				continue
+			}
+			peoplePos = append(peoplePos, pos)
+		}
+	}
+	err := w.Zombies.refreshBfsMap(peoplePos)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (w *World) zombieEatAgent(agent *Agent) error {
+	err := w.Nation[agent.idNation].removeAgent(agent)
+	if err != nil {
+		return err
+	}
+	w.Zombies.AddZombie(agent)
+	return nil
+}
+
+func (w *World) ZombieEat() error {
+	for pos, ids := range w.Zombies.PosToIdAgent {
+		if len(ids) == 0 {
+			continue
+		}
+		population := []*Agent{}
+		for _, nation := range w.Nation {
+			for _, id := range nation.PosToIdAgent[pos] {
+				agent, err := nation.GetAgent(id)
+				if err != nil {
+					return err
+				}
+				if agent.Status == DEAD {
+					continue
+				}
+				population = append(population, agent)
+			}
+		}
+		if len(population) == 0 {
+			return nil
+		}
+		i := rand.Intn(len(population))
+		w.zombieEatAgent(population[i])
 	}
 	return nil
 }

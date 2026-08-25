@@ -1,9 +1,12 @@
 package common
 
-import "math"
+import (
+	"errors"
+	"math"
+)
 
 type Number interface {
-	int32 | float32
+	int32 | float32 | int8
 }
 
 type Vec[t Number] struct {
@@ -185,4 +188,28 @@ func CastVec[from, to Number](a Vec[from]) Vec[to] {
 
 func CmpVecSort[t Number](a, b Vec[t]) int {
 	return int(DistanceAtoBVecByEuclidean(a, b))
+}
+
+func GetNeighborhoodPos(pos Vec[int32], size Vec[int32]) (res []Vec[int32], err error) {
+
+	if size.X <= 0 || size.Y <= 0 {
+		return nil, errors.New("invalid neighborhood size")
+	}
+	if size.X%2 == 0 || size.Y%2 == 0 {
+		return nil, errors.New("neighborhood size must be odd")
+	}
+	halfX := size.X / 2
+	halfY := size.Y / 2
+
+	res = make([]Vec[int32], size.X*size.Y)
+	var worldX, worldY int32
+	for ix := range size.X {
+		for iy := range size.Y {
+			worldX = pos.X + (ix - halfX)
+			worldY = pos.Y + (iy - halfY)
+
+			res = append(res, NewVec(worldX, worldY))
+		}
+	}
+	return res, nil
 }

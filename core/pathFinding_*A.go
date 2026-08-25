@@ -26,7 +26,7 @@ func (p *pathFindigInformation) retriavePath() (res []common.Vec[int32]) {
 	}
 
 }
-func Search(s []*pathFindigInformation, a common.Vec[int32]) int {
+func search(s []*pathFindigInformation, a common.Vec[int32]) int {
 	for i := range s {
 		if s[i].pos.IsEqual(a) {
 			return i
@@ -34,7 +34,7 @@ func Search(s []*pathFindigInformation, a common.Vec[int32]) int {
 	}
 	return -1
 }
-func InsertSorted(s []*pathFindigInformation, e *pathFindigInformation) []*pathFindigInformation {
+func insertSorted(s []*pathFindigInformation, e *pathFindigInformation) []*pathFindigInformation {
 	ef := e.weightFromStart + e.weightToGoal
 
 	i := sort.Search(len(s), func(i int) bool {
@@ -55,10 +55,10 @@ func InsertSorted(s []*pathFindigInformation, e *pathFindigInformation) []*pathF
 }
 
 func fromAtoB(a, b common.Vec[int32]) int32 {
-	return common.DistanceAtoBVecByEuclidean(a, b)
+	return common.DistanceAtoBVecShev(a, b)
 }
 
-func foreachNeighboarhood(m *Map, pos common.Vec[int32], callback func(x, y int32) (stop bool)) {
+func foreachNeighboarhood(m *Map[BaseCell], pos common.Vec[int32], callback func(x, y int32) (stop bool)) {
 	for iy := range int32(3) {
 		for ix := range int32(3) {
 			worldX := pos.X + (ix - 1)
@@ -82,12 +82,8 @@ func foreachNeighboarhood(m *Map, pos common.Vec[int32], callback func(x, y int3
 		}
 	}
 }
-func isDiagonal(a, b common.Vec[int32]) bool {
-	diff := a.Sub(b)
-	return diff.X != 0 && diff.Y != 0
-}
 
-func PerformPathFindig(m *Map, start, goal common.Vec[int32]) []common.Vec[int32] {
+func PerformPathFinding_A(m *Map[BaseCell], start, goal common.Vec[int32]) []common.Vec[int32] {
 	var discovered map[common.Vec[int32]]*pathFindigInformation = make(map[common.Vec[int32]]*pathFindigInformation)
 	var toDiscover []*pathFindigInformation = make([]*pathFindigInformation, 0)
 	startingOrigin := pathFindigInformation{
@@ -103,26 +99,36 @@ func PerformPathFindig(m *Map, start, goal common.Vec[int32]) []common.Vec[int32
 			}
 
 			weightFromStart := origin.weightFromStart + 2
-			weightToGoal := fromAtoB(pos, goal) * 2
-			if isDiagonal(pos, goal) {
+			if !slices.Contains([]float32{0, 90, 180, 270, 360}, pos.Clone().Sub(goal).Angle()) {
+				//TO PREDILECT STRAIGHT LINE
 				weightFromStart += 1
+			}
+			//TO AVOID EXPLORING TO MUCH FURTHER TO THE GOAL
+			weightToGoal := fromAtoB(pos, goal) * 2
+			if pos.IsEqual(goal) {
+				toDiscover = insertSorted(toDiscover, &pathFindigInformation{
+					pos:             pos,
+					origin:          &origin,
+					weightFromStart: weightFromStart,
+					weightToGoal:    weightToGoal,
+				})
+				return true
 			}
 			if _, ok := discovered[pos]; ok {
 				return
-
 			}
-			if id := Search(toDiscover, pos); id != -1 {
+			if id := search(toDiscover, pos); id != -1 {
 				a := toDiscover[id]
 				if weightToGoal+weightFromStart < a.weightToGoal+a.weightFromStart {
 					a.origin = &origin
 					a.weightFromStart = weightFromStart
 					a.weightToGoal = weightToGoal
 					toDiscover = slices.Delete(toDiscover, id, id+1)
-					toDiscover = InsertSorted(toDiscover, a)
+					toDiscover = insertSorted(toDiscover, a)
 				}
 				return
 			}
-			toDiscover = InsertSorted(toDiscover, &pathFindigInformation{
+			toDiscover = insertSorted(toDiscover, &pathFindigInformation{
 				pos:             pos,
 				origin:          &origin,
 				weightFromStart: weightFromStart,
@@ -140,7 +146,6 @@ func PerformPathFindig(m *Map, start, goal common.Vec[int32]) []common.Vec[int32
 		explored := toDiscover[0]
 		toDiscover = slices.Delete(toDiscover, 0, 1)
 		visit++
-
 		if explored.pos.IsEqual(goal) {
 			return explored.retriavePath()
 		}

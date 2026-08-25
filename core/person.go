@@ -12,41 +12,41 @@ const (
 	ZOMBIE     = "ZOMBIE"
 )
 
-type Status string
+type AgentStatus string
 
 const (
-	WORKING = "WORKING"
-	MOVING  = "MOVING"
-	DEAD    = "DEAD"
-	IDLE    = "IDLE"
-	STOP    = "STOP"
+	WORKING AgentStatus = "WORKING"
+	MOVING  AgentStatus = "MOVING"
+	DEAD    AgentStatus = "DEAD"
+	IDLE    AgentStatus = "IDLE"
+	STOP    AgentStatus = "STOP"
 )
 
-type Person struct {
-	id       ID_PERSON
+type Agent struct {
+	id       ID_AGENT
 	idNation ID_NATION
 	Job      Job
 	touch    int
 	paths    *common.Queue[common.Vec[int32]]
-	status   Status
+	Status   AgentStatus
 	pos      common.Vec[int32]
 }
 
-func newPerson(job Job, idNation ID_NATION, pos common.Vec[int32]) Person {
-	p := Person{
-		id:       CURRENT_ID_PEOPLE,
+func newPerson(job Job, idNation ID_NATION, pos common.Vec[int32]) Agent {
+	p := Agent{
+		id:       CURRENT_ID_AGENT,
 		Job:      job,
 		idNation: idNation,
 		pos:      pos,
 	}
-	CURRENT_ID_PEOPLE++
+	CURRENT_ID_AGENT++
 	return p
 }
 
-func (p *Person) TouchMOVE() {
+func (p *Agent) TouchMOVE() {
 	p.touch = TOUCH_MOVE_PERSON_ID
 }
 
-func (p *Person) IsTouchMOVE() bool {
+func (p *Agent) IsTouchMOVE() bool {
 	return p.touch == TOUCH_MOVE_PERSON_ID
 }

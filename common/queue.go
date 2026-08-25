@@ -16,7 +16,7 @@ func NewQueue[t any](values []t, cmp func(a, b t) int) *Queue[t] {
 		cmp:    cmp,
 	}
 	if values != nil {
-		q.Enqueue(values)
+		q.Enqueue(values...)
 	}
 	return q
 }
@@ -30,7 +30,7 @@ func (q *Queue[t]) Reset() {
 	q.values = nil
 }
 
-func (q *Queue[t]) Enqueue(values []t) {
+func (q *Queue[t]) Enqueue(values ...t) {
 	if q.cmp == nil {
 		q.values = append(q.values, values...)
 	} else {
@@ -44,9 +44,6 @@ func (q *Queue[t]) Enqueue(values []t) {
 }
 
 func (q *Queue[t]) DenqueueN(n int) (values []t, end bool) {
-	if q.values == nil {
-		return nil, false
-	}
 	if q.index+n+1 >= len(q.values) {
 		values = q.values[q.index:]
 		q.index = len(q.values)
@@ -58,9 +55,6 @@ func (q *Queue[t]) DenqueueN(n int) (values []t, end bool) {
 }
 
 func (q *Queue[t]) Denqueue() (value t, end bool) {
-	if q.values == nil {
-		return value, false
-	}
 	if q.index >= len(q.values) {
 		return value, true
 	}

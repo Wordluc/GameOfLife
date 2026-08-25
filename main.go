@@ -105,6 +105,15 @@ func main() {
 				if err != nil {
 					panic(err)
 				}
+				//				w.Zombies.BfsMap.ForEach(func(x, y int32) error {
+				//					cellX := SIZE_CELL * x
+				//					cellY := SIZE_CELL * y
+				//					n, _ := w.Zombies.BfsMap.GetCell(common.Vec[int32]{X: x, Y: y})
+				//					if n != nil {
+				//						rl.DrawText(fmt.Sprint(*n), cellX+SIZE_CELL/2, cellY+SIZE_CELL/2, 3, rl.Red)
+				//					}
+				//					return nil
+				//				})
 				rl.EndMode2D()
 			}
 			rl.EndTextureMode()
@@ -128,7 +137,7 @@ func main() {
 			}
 		}
 		if rl.IsKeyPressed(rl.KeyH) {
-			err = w.AddBlock(core.HOUSE, getPosMouse(), common.Vec[int32]{X: 3, Y: 3})
+			err = w.AddBlock(core.HOUSE, getPosMouse(), common.Vec[int32]{X: 1, Y: 1})
 			if err != nil {
 				println(err.Error())
 			}
@@ -183,9 +192,17 @@ func main() {
 				}
 			}
 		}
+		if rl.IsKeyPressed(rl.KeyZ) {
+			w.Zombies.NewZombie(getPosMouse())
+		}
 		timer += rl.GetFrameTime()
-		w.PerformPathFinding()
+		w.RefreshZombieVision()
 		if timer >= 0.5 {
+			err = w.ZombieEat()
+			w.PerformPathFinding()
+			if err != nil {
+				panic(err)
+			}
 			w.HarvestingSimulation()
 			w.StarvingSimulation()
 			err := w.MovementSimulation()

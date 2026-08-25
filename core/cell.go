@@ -59,7 +59,7 @@ type CellDefinition struct {
 	convert     func(*BaseCell) error
 	ConvertFrom []CellType
 	maxPeople   int
-	CanConvert  func(pos common.Vec[int32], m *Map) (okToConvert bool)
+	CanConvert  func(pos common.Vec[int32], m *Map[BaseCell]) (okToConvert bool)
 }
 
 var cellsDefinition map[CellType]CellDefinition = map[CellType]CellDefinition{
@@ -96,7 +96,7 @@ var cellsDefinition map[CellType]CellDefinition = map[CellType]CellDefinition{
 		convert:     ConvertToDockCell,
 		ConvertFrom: []CellType{WATER},
 		maxPeople:   10,
-		CanConvert: func(pos common.Vec[int32], m *Map) (okToConvert bool) {
+		CanConvert: func(pos common.Vec[int32], m *Map[BaseCell]) (okToConvert bool) {
 			neir, _ := m.GetNeighborhoodCells(pos, common.Vec[int32]{X: 3, Y: 3})
 			waterCount := 0
 			dockOrGrassCount := 0
