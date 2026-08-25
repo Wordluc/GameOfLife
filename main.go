@@ -197,9 +197,9 @@ func main() {
 		}
 		timer += rl.GetFrameTime()
 		w.RefreshZombieVision()
+		w.PerformPathFinding()
 		if timer >= 0.5 {
 			err = w.ZombieEat()
-			w.PerformPathFinding()
 			if err != nil {
 				panic(err)
 			}

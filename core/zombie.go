@@ -23,10 +23,10 @@ func NewZombieHorde(w *World) ZombieHorde {
 	return horde
 }
 
-func (horde *ZombieHorde) moveAgentsToGoals() (err error) {
+func (horde *ZombieHorde) moveZombies() (err error) {
 	var person *Agent
 	for _, person = range slices.Clone(horde.agents.GetAll()) {
-		err = horde.movePersonToGoalUsingPathFindingBFS(person)
+		err = horde.moveZombie(person)
 		if err != nil {
 			return err
 		}
@@ -34,7 +34,7 @@ func (horde *ZombieHorde) moveAgentsToGoals() (err error) {
 	return nil
 }
 
-func (horde *ZombieHorde) movePersonToGoalUsingPathFindingBFS(person *Agent) error {
+func (horde *ZombieHorde) moveZombie(person *Agent) error {
 	if person.IsTouchMOVE() {
 		return nil
 	}
@@ -81,7 +81,7 @@ func (z *ZombieHorde) refreshBfsMap(starts []common.Vec[int32]) error {
 	return nil
 }
 
-func (z *ZombieHorde) AddZombie(agent *Agent) error {
+func (z *ZombieHorde) addZombie(agent *Agent) error {
 	if agent.paths != nil {
 		cell, _ := z.World.Map.GetCell(*agent.paths.GetLast())
 		cell.VirtualNPopulation--
