@@ -2,7 +2,6 @@ package common
 
 import (
 	"errors"
-	"fmt"
 	"slices"
 )
 
@@ -29,9 +28,7 @@ func (s *SortSlice[t]) Insert(v t) {
 }
 
 func (s *SortSlice[t]) Remove(v t) (removed bool) {
-	fmt.Printf("before %v\n", len(s.values))
 	s.values = slices.DeleteFunc(s.values, func(a t) bool { return s.cmp(v, a) == 0 })
-	fmt.Printf("after %v\n", len(s.values))
 	return true
 }
 
