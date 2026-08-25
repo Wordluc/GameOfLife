@@ -101,16 +101,15 @@ func main() {
 			{
 				rl.BeginMode2D(camera)
 				render.TickPeopleAnimation()
-				err = w.Map.ForEach(func(x, y int32) error {
+				err = w.Map.ForEach(func(x, y int32, _ *core.BaseCell) error {
 					return render.DrawCell(x, y, w)
 				})
 				if err != nil {
 					panic(err)
 				}
-				//				w.Zombies.BfsMap.ForEach(func(x, y int32) error {
+				//				w.Zombies.BfsMap.ForEach(func(x, y int32, n *int16) error {
 				//					cellX := SIZE_CELL * x
 				//					cellY := SIZE_CELL * y
-				//					n, _ := w.Zombies.BfsMap.GetCell(common.Vec[int32]{X: x, Y: y})
 				//					if n != nil {
 				//						rl.DrawText(fmt.Sprint(*n), cellX+SIZE_CELL/2, cellY+SIZE_CELL/2, 3, rl.Red)
 				//					}
@@ -218,7 +217,10 @@ func main() {
 			w.Zombies.NewZombie(getPosMouse())
 		}
 		timer += rl.GetFrameTime()
-		w.RefreshZombieVision()
+		err = w.RefreshZombieVision()
+		if err != nil {
+			panic(err)
+		}
 		w.PerformPathFinding()
 		if timer >= 0.5 {
 			err = w.ZombieEat()

@@ -10,12 +10,18 @@ func PerformPathFinding_BFS(m *Map[BaseCell], starts []common.Vec[int32]) (res M
 	var queue *common.Queue[Quantity[common.Vec[int32], int16]] = common.NewQueue[Quantity[common.Vec[int32], int16]](nil, nil)
 	var visited map[common.Vec[int32]]bool = make(map[common.Vec[int32]]bool, m.size.X*m.size.Y)
 	res = NewMap[int16](m.size)
-	res.SetEachElement(func(x, y int32) *int16 {
-		if n, _ := m.GetCell(common.Vec[int32]{X: x, Y: y}); slices.Contains([]CellType{STONE, WATER}, n.cellType) {
-			return new(int16(math.MaxInt8) + 1)
+	var cost int16
+	err = m.ForEach(func(x, y int32, c *BaseCell) error {
+		cost = int16(math.MaxInt8)
+		if slices.Contains([]CellType{STONE, WATER}, c.cellType) {
+			cost += 1
 		}
-		return new(int16(math.MaxInt8))
+		return res.SetRawCell(new(cost), c.pos)
 	})
+	if err != nil {
+		return res, err
+	}
+
 	for i := range starts {
 		v, err := res.GetCell(starts[i])
 		if err != nil {
