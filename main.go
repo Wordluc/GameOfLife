@@ -209,7 +209,7 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-			timer -= 0.5 // or timer = 0, but -= preserves overshoot accuracy
+			timer -= 0.5
 		}
 		if 1/rl.GetFrameTime() < 50 {
 			fmt.Printf("fps:%v\n", 1/rl.GetFrameTime())

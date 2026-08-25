@@ -272,16 +272,16 @@ func (w *World) StarvingSimulation() error {
 }
 
 func (w *World) RefreshZombieVision() error {
-	peoplePos := []common.Vec[int32]{}
+	zombieGoals := []common.Vec[int32]{}
 	for _, nation := range w.Nations {
 		for pos, l := range nation.PosToIdAgent {
 			if len(l) == 0 {
 				continue
 			}
-			peoplePos = append(peoplePos, pos)
+			zombieGoals = append(zombieGoals, pos)
 		}
 	}
-	err := w.Zombies.refreshBfsMap(peoplePos)
+	err := w.Zombies.refreshBfsMap(zombieGoals)
 	if err != nil {
 		return err
 	}
