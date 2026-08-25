@@ -6,7 +6,7 @@ import (
 )
 
 type Number interface {
-	int32 | float32 | int8
+	int32 | float32 | int8 | int16
 }
 
 type Vec[t Number] struct {

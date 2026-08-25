@@ -7,7 +7,7 @@ import (
 
 type ZombieHorde struct {
 	AgentGroup
-	BfsMap Map[int8]
+	BfsMap Map[int16]
 }
 
 func NewZombieHorde(w *World) ZombieHorde {
@@ -18,7 +18,7 @@ func NewZombieHorde(w *World) ZombieHorde {
 			PosToIdAgent: map[common.Vec[int32]][]ID_AGENT{},
 			agents:       common.NewSortSlice(func(a, b *Agent) int { return int(a.id) - int(b.id) }),
 		},
-		BfsMap: NewMap[int8](w.Map.size),
+		BfsMap: NewMap[int16](w.Map.size),
 	}
 	return horde
 }
@@ -42,9 +42,13 @@ func (horde *ZombieHorde) movePersonToGoalUsingPathFindingBFS(person *Agent) err
 	if neighborhood == nil {
 		return nil
 	}
+
 	cost := neighborhood[person.pos]
 	delete(neighborhood, person.pos)
 	for i := range neighborhood {
+		if *cost < 0 {
+			delete(neighborhood, i)
+		}
 		if *neighborhood[i] < *cost {
 			horde.PosToIdAgent[person.pos] = slices.DeleteFunc(horde.PosToIdAgent[person.pos], func(a ID_AGENT) bool { return person.id == a })
 			horde.PosToIdAgent[i] = append(horde.PosToIdAgent[i], person.id)
