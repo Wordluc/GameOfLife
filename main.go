@@ -17,7 +17,8 @@ func approssimare(a float32, t int) float32 {
 	return float32(math.Floor(float64(a*float32(math.Pow10(t)))) / math.Pow10(t))
 }
 
-var fullscreen bool = false
+var fullscreen bool = true
+var cameraTarget rl.Vector2 = rl.Vector2{}
 
 func main() {
 	var render graphics.Render = new(graphics.RaylibRender{
@@ -92,6 +93,7 @@ func main() {
 		}
 	}
 	for !rl.WindowShouldClose() {
+		camera.Target = cameraTarget
 		core.TOUCH_MOVE_PERSON_ID = rand.Int()
 
 		{
@@ -165,6 +167,16 @@ func main() {
 			if err != nil {
 				println(err.Error())
 			}
+		}
+		switch rl.GetKeyPressed() {
+		case rl.KeyUp:
+			cameraTarget.Y -= float32(SIZE_CELL)
+		case rl.KeyDown:
+			cameraTarget.Y += float32(SIZE_CELL)
+		case rl.KeyLeft:
+			cameraTarget.X -= float32(SIZE_CELL)
+		case rl.KeyRight:
+			cameraTarget.X += float32(SIZE_CELL)
 		}
 		if rl.IsKeyPressed(rl.KeyZero) {
 			currentJob = core.FARMER
