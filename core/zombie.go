@@ -58,17 +58,6 @@ func (horde *ZombieHorde) moveZombie(person *Agent) error {
 		}
 	}
 
-	//RANDOM MOVEMENT
-	for key := range neighborhood {
-		if *neighborhood[key] == *cost && !key.IsEqual(person.pos) {
-			horde.PosToIdAgent[person.pos] = slices.DeleteFunc(horde.PosToIdAgent[person.pos], func(a ID_AGENT) bool { return person.id == a })
-			horde.PosToIdAgent[key] = append(horde.PosToIdAgent[key], person.id)
-			person.pos = key
-			person.TouchMOVE()
-			return nil
-		}
-	}
-
 	return nil
 }
 
@@ -86,7 +75,6 @@ func (z *ZombieHorde) addZombie(agent *Agent) error {
 		cell, _ := z.World.Map.GetCell(*agent.paths.GetLast())
 		cell.VirtualNPopulation--
 	}
-	agent.Job = ZOMBIE
 	agent.Status = MOVING
 	agent.paths = nil
 	agent.idNation = -1
