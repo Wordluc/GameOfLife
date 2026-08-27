@@ -17,7 +17,7 @@ func approssimare(a float32, t int) float32 {
 	return float32(math.Floor(float64(a*float32(math.Pow10(t)))) / math.Pow10(t))
 }
 
-var fullscreen bool = true
+var fullscreen bool = false
 var cameraTarget rl.Vector2 = rl.Vector2{}
 
 func main() {
@@ -177,6 +177,16 @@ func main() {
 			cameraTarget.X -= float32(SIZE_CELL)
 		case rl.KeyRight:
 			cameraTarget.X += float32(SIZE_CELL)
+		}
+		if cameraTarget.X < 0 {
+			cameraTarget.X = 0
+		} else if cameraTarget.X > float32(SIZE_CELL)*float32((totalMap.X-visibleMap.X)) {
+			cameraTarget.X = float32(SIZE_CELL) * float32((totalMap.X - visibleMap.X))
+		}
+		if cameraTarget.Y < 0 {
+			cameraTarget.Y = 0
+		} else if cameraTarget.Y > float32(SIZE_CELL)*float32((totalMap.Y-visibleMap.Y)) {
+			cameraTarget.Y = float32(SIZE_CELL) * float32((totalMap.Y - visibleMap.Y))
 		}
 		if rl.IsKeyPressed(rl.KeyZero) {
 			currentJob = core.FARMER
