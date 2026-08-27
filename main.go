@@ -11,7 +11,7 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-var SIZE_CELL int32 = 30
+var SIZE_CELL int32 = 36 * 2
 
 func approssimare(a float32, t int) float32 {
 	return float32(math.Floor(float64(a*float32(math.Pow10(t)))) / math.Pow10(t))
@@ -25,7 +25,7 @@ func main() {
 	})
 
 	totalMap := common.Vec[int32]{X: 16 * 5, Y: 9 * 5}
-	visibleMap := common.Vec[int32]{X: 16 * 2, Y: 9 * 2}
+	visibleMap := common.Vec[int32]{X: 16 * 1, Y: 9 * 1}
 	visibleWindow := visibleMap.Clone().MultScalar(SIZE_CELL)
 	rlVisibleWindow := rl.Rectangle{X: 0, Y: 0, Width: float32(visibleWindow.X), Height: -float32(visibleWindow.Y)}
 	w := core.NewWorld(totalMap)
