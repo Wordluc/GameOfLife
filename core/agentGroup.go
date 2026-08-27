@@ -11,7 +11,7 @@ type ID_AGENT int
 var CURRENT_ID_AGENT ID_AGENT = 1
 
 type AgentGroup struct {
-	*World
+	world            *World
 	agents           *common.SortSlice[*Agent]
 	toRunPathFinding bool
 	PosToIdAgent     map[common.Vec[int32]][]ID_AGENT
@@ -64,7 +64,7 @@ func (w *AgentGroup) addAgent(agent *Agent, where common.Vec[int32]) {
 	w.agents.Insert(agent)
 	agent.pos = where
 	if agent.paths != nil {
-		cell, _ := w.Map.GetCell(*agent.paths.GetLast())
+		cell, _ := w.world.Map.GetCell(*agent.paths.GetLast())
 		cell.VirtualNPopulation--
 	}
 	w.PosToIdAgent[where] = append(w.PosToIdAgent[where], agent.id)

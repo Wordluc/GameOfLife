@@ -49,16 +49,23 @@ func (r *RaylibRender) DrawCell(x, y int32, w *core.World) error {
 	cellX := r.SizeCell.X * x
 	cellY := r.SizeCell.Y * y
 	var people int
+	var playable bool
 	for _, nation := range w.Nations {
 		people += len(nation.GetAgentsIdInsideCellf(pos, func(a *core.Agent) bool { return a.Status != core.DEAD }))
+		if len(nation.GetCharactersAt(pos)) != 0 {
+			playable = true
+		}
 	}
 	zombie := len(w.Zombies.GetAgentsIdInsideCell(pos))
 	rl.DrawRectangle(cellX, cellY, r.SizeCell.X, r.SizeCell.Y, color)
 	rl.DrawText(fmt.Sprint(cell.VirtualNPopulation), cellX, cellY, 3, rl.Red)
 	rl.DrawText(fmt.Sprint(people), cellX+10, cellY, 3, rl.Red)
-
 	drawPeopleDots(cellX, cellY, r.SizeCell.X, r.SizeCell.Y, people, r.PeopleSeed, rl.Red)
 	drawPeopleDots(cellX, cellY, r.SizeCell.X, r.SizeCell.Y, zombie, r.PeopleSeed, rl.Black)
+
+	if playable {
+		rl.DrawCircle(cellX+r.SizeCell.X/2, cellY+r.SizeCell.Y/2, 10, rl.Orange)
+	}
 	return nil
 }
 

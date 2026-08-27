@@ -14,7 +14,7 @@ func NewZombieHorde(w *World) ZombieHorde {
 	var horde ZombieHorde
 	horde = ZombieHorde{
 		AgentGroup: AgentGroup{
-			World:        w,
+			world:        w,
 			PosToIdAgent: map[common.Vec[int32]][]ID_AGENT{},
 			agents:       common.NewSortSlice(func(a, b *Agent) int { return int(a.id) - int(b.id) }),
 		},
@@ -62,7 +62,7 @@ func (horde *ZombieHorde) moveZombie(person *Agent) error {
 }
 
 func (z *ZombieHorde) refreshBfsMap(starts []common.Vec[int32]) error {
-	m, err := PerformPathFinding_BFS(z.World.Map, starts)
+	m, err := PerformPathFinding_BFS(z.world.Map, starts)
 	if err != nil {
 		return err
 	}
@@ -72,12 +72,12 @@ func (z *ZombieHorde) refreshBfsMap(starts []common.Vec[int32]) error {
 
 func (z *ZombieHorde) addZombie(agent *Agent) error {
 	if agent.paths != nil {
-		cell, _ := z.World.Map.GetCell(*agent.paths.GetLast())
+		cell, _ := z.world.Map.GetCell(*agent.paths.GetLast())
 		cell.VirtualNPopulation--
 	}
 	agent.Status = MOVING
 	agent.paths = nil
 	agent.idNation = -1
-	z.Zombies.addAgent(agent, agent.pos)
+	z.addAgent(agent, agent.pos)
 	return nil
 }

@@ -9,13 +9,14 @@ import (
 
 type Nation struct {
 	AgentGroup
-	resources map[Resource]float32
+	resources  map[Resource]float32
+	Characters []*Character
 }
 
 func NewNation(w *World, id ID_NATION) Nation {
 	return Nation{
 		AgentGroup: AgentGroup{
-			World:        w,
+			world:        w,
 			PosToIdAgent: map[common.Vec[int32]][]ID_AGENT{},
 			agents:       common.NewSortSlice(func(a, b *Agent) int { return int(a.id) - int(b.id) }),
 			id:           id,
@@ -49,9 +50,26 @@ func (n *Nation) movePerson(person *Agent) error {
 	return nil
 }
 
+func (n *Nation) moveCharacter(playable *Character) error {
+	if playable.paths == nil {
+		return nil
+	}
+	from := playable.paths.GetBack(1)
+	if from != nil && !from.IsEqual(playable.pos) {
+		return errors.New("Error initial position")
+	}
+
+	to, end := playable.paths.Denqueue()
+	if end {
+		return nil
+	}
+	playable.pos = to
+	return nil
+}
+
 func (w *Nation) movePeople() (err error) {
 	var person *Agent
-	for _, person = range slices.Clone(w.agents.GetAll()) {
+	for _, person = range w.agents.GetAll() {
 		err = w.movePerson(person)
 		if err != nil {
 			return err
@@ -60,8 +78,19 @@ func (w *Nation) movePeople() (err error) {
 	return nil
 }
 
-func (w *Nation) harvesting() error {
-	for celltype, cellsPos := range w.CellType_ToPosCell {
+func (w *Nation) moveCharacters() (err error) {
+	var character *Character
+	for _, character = range w.Characters {
+		err = w.moveCharacter(character)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (w *Nation) Harvesting() error {
+	for celltype, cellsPos := range w.world.CellType_ToPosCell {
 		for _, pos := range cellsPos {
 			n := len(w.PosToIdAgent[pos])
 			for _, q := range CellTypeToResource[celltype] {
@@ -81,7 +110,7 @@ func (w *Nation) harvesting() error {
 	return nil
 }
 
-func (w *Nation) starving() error {
+func (w *Nation) Starving() error {
 	if w.resources[FOOD] > -100 {
 		return nil
 	}
@@ -102,13 +131,22 @@ func (w *Nation) starving() error {
 		}
 		if person.paths != nil {
 			lastPosCell := person.paths.GetLast()
-			lastCell, _ := w.Map.GetCell(*lastPosCell)
+			lastCell, _ := w.world.Map.GetCell(*lastPosCell)
 			lastCell.VirtualNPopulation--
 		}
 		person.Status = DEAD
 		w.PosToIdAgent[person.pos] = slices.DeleteFunc(w.PosToIdAgent[person.pos], func(a ID_AGENT) bool { return person.id == a })
-		w.toRunPathFindingForAll()
+		w.world.toRunPathFindingForAll()
 		break
 	}
 	return nil
+}
+
+func (w *Nation) GetCharactersAt(pos common.Vec[int32]) (res []*Character) {
+	for i := range w.Characters {
+		if w.Characters[i].pos.IsEqual(pos) {
+			res = append(res, w.Characters[i])
+		}
+	}
+	return res
 }

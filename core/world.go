@@ -21,11 +21,6 @@ func (b bindingCellTypeToCell) SetCellTypeCell(cell *BaseCell, newCellType CellT
 	cell.cellType = newCellType
 }
 
-type Player struct {
-	visualPos common.Vec[float32]
-	logic     common.Vec[int32]
-}
-
 type World struct {
 	Map                *Map[BaseCell]
 	Nations            map[ID_NATION]*Nation
@@ -223,7 +218,7 @@ func (w *World) PerformPathFinding() {
 	}
 }
 
-func (w *World) NewNation(idNation ID_NATION, resource map[Resource]float32) {
+func (w *World) AddNation(idNation ID_NATION, resource map[Resource]float32) {
 	w.Nations[idNation] = new(NewNation(w, idNation))
 	w.IdNations = append(w.IdNations, idNation)
 }
@@ -234,7 +229,7 @@ func (w *World) NewZombie(where common.Vec[int32]) *Agent {
 
 func (w *World) NewPerson(job Job, where common.Vec[int32], idNation ID_NATION) *Agent {
 	if !slices.Contains(w.IdNations, idNation) {
-		w.NewNation(idNation, map[Resource]float32{FOOD: 1000})
+		w.AddNation(idNation, map[Resource]float32{FOOD: 1000})
 	}
 	p := w.Nations[idNation].newAgent(job, where)
 	p.TouchMOVE()
@@ -248,6 +243,10 @@ func (w *World) MovementSimulation() (err error) {
 		if err != nil {
 			return err
 		}
+		err = w.Nations[w.IdNations[i]].moveCharacters()
+		if err != nil {
+			return err
+		}
 	}
 	err = w.Zombies.moveZombies()
 	if err != nil {
@@ -258,14 +257,14 @@ func (w *World) MovementSimulation() (err error) {
 
 func (w *World) HarvestingSimulation() error {
 	for _, nation := range w.Nations {
-		nation.harvesting()
+		nation.Harvesting()
 	}
 	return nil
 }
 
 func (w *World) StarvingSimulation() error {
 	for _, nation := range w.Nations {
-		nation.starving()
+		nation.Starving()
 	}
 	return nil
 }
@@ -319,6 +318,33 @@ func (w *World) ZombieEat() error {
 		}
 		i := rand.Intn(len(population))
 		w.zombieEatAgent(population[i])
+	}
+	return nil
+}
+
+func (w *World) GetCharactersAt(pos common.Vec[int32], idNation *ID_NATION) (res []*Character) {
+	if idNation == nil {
+		for _, nation := range w.Nations {
+			res = append(res, nation.GetCharactersAt(pos)...)
+		}
+		return res
+	}
+	if w.Nations == nil {
+		return nil
+	}
+	return w.Nations[*idNation].Characters
+}
+
+func (w *World) SetPathCharactersTo(end common.Vec[int32], characters ...*Character) (err error) {
+	if characters == nil {
+		return errors.New("No character selected")
+	}
+	for i := range characters {
+		if characters[i].pos.IsEqual(end) {
+			continue
+		}
+		characters[i].paths = common.NewQueue(PerformPathFinding_A(w.Map, characters[i].pos, end), nil)
+		characters[i].paths.Denqueue()
 	}
 	return nil
 }

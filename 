@@ -92,7 +92,7 @@ func main() {
 			Y: int32(worldPos.Y) / SIZE_CELL,
 		}
 	}
-	var pickedPlayable []*core.Character
+	var pickedPlayable []*core.Playable
 	w.AddNation(0, map[core.Resource]float32{core.FOOD: 1000})
 	for !rl.WindowShouldClose() {
 		camera.Target = cameraTarget
@@ -171,7 +171,7 @@ func main() {
 		}
 		if rl.IsKeyPressed(rl.KeyC) {
 			if len(w.Nations) != 0 {
-				w.Nations[0].Characters = append(w.Nations[0].Characters, new(core.NewCharacter(getPosMouse())))
+				w.Nations[0].Playeable = append(w.Nations[0].Playeable, new(core.NewPlayable(getPosMouse())))
 				if err != nil {
 					println(err.Error())
 				}
@@ -179,9 +179,9 @@ func main() {
 		}
 		if rl.IsMouseButtonPressed(rl.MouseLeftButton) {
 			if pickedPlayable == nil {
-				pickedPlayable = w.GetCharactersAt(getPosMouse(), nil)
+				pickedPlayable = w.GetPlayableAt(getPosMouse(), nil)
 			} else {
-				w.SetPathCharactersTo(getPosMouse(), pickedPlayable...)
+				w.SetPathPlayablesTo(getPosMouse(), pickedPlayable...)
 				pickedPlayable = nil
 			}
 		}
