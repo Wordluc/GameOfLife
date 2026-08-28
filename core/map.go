@@ -56,6 +56,9 @@ func (m *Map[v]) GetNeighborhoodCells(pos common.Vec[int32], size common.Vec[int
 			}
 
 			idx = worldX + worldY*m.size.X
+			if m.cells[idx] == nil {
+				continue
+			}
 			res[common.Vec[int32]{X: worldX, Y: worldY}] = m.cells[idx]
 		}
 	}

@@ -18,7 +18,7 @@ func NewNation(w *World, id ID_NATION) Nation {
 		AgentGroup: AgentGroup{
 			world:       w,
 			PosToAgents: map[common.Vec[int32]][]*Agent{},
-			agents:      common.NewSortSlice(func(a, b *Agent) int { return int(a.id) - int(b.id) }),
+			agents:      common.NewSortSlice(func(a, b *Agent) int { return int(a.Id) - int(b.Id) }),
 			id:          id,
 		},
 		resources: map[Resource]float32{},
@@ -43,7 +43,7 @@ func (n *Nation) movePerson(person *Agent) error {
 		return nil
 	}
 	person.Status = MOVING
-	n.PosToAgents[*from] = slices.DeleteFunc(n.PosToAgents[*from], func(a *Agent) bool { return person.id == a.id })
+	n.PosToAgents[*from] = slices.DeleteFunc(n.PosToAgents[*from], func(a *Agent) bool { return person.Id == a.Id })
 	n.PosToAgents[to] = append(n.PosToAgents[to], person)
 	person.pos = to
 	person.TouchMOVE()
@@ -135,7 +135,7 @@ func (w *Nation) Starving() error {
 			lastCell.VirtualNPopulation--
 		}
 		person.Status = DEAD
-		w.PosToAgents[person.pos] = slices.DeleteFunc(w.PosToAgents[person.pos], func(a *Agent) bool { return person.id == a.id })
+		w.PosToAgents[person.pos] = slices.DeleteFunc(w.PosToAgents[person.pos], func(a *Agent) bool { return person.Id == a.Id })
 		w.world.toRunPathFindingForAll()
 		break
 	}

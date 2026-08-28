@@ -32,7 +32,7 @@ func (w *AgentGroup) GetAgentsAt(pos common.Vec[int32], condition func(*Agent) b
 }
 
 func (w *AgentGroup) newAgent(job Job, where common.Vec[int32]) *Agent {
-	p := new(newPerson(job, w.id, where))
+	p := new(newAgent(job, w.id, where))
 	w.agents.Insert(p)
 	w.PosToAgents[where] = append(w.PosToAgents[where], p)
 	return p
@@ -53,6 +53,6 @@ func (w *Nation) removeAgent(agent *Agent) (err error) {
 	if !removed {
 		return errors.New("Error removing agent")
 	}
-	w.PosToAgents[agent.pos] = slices.DeleteFunc(w.PosToAgents[agent.pos], func(a *Agent) bool { return a.id == agent.id })
+	w.PosToAgents[agent.pos] = slices.DeleteFunc(w.PosToAgents[agent.pos], func(a *Agent) bool { return a.Id == agent.Id })
 	return nil
 }

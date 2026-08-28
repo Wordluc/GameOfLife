@@ -6,5 +6,4 @@ import (
 
 type Render interface {
 	DrawCell(x, y int32, w *core.World) error
-	TickPeopleAnimation()
 }

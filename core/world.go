@@ -262,7 +262,24 @@ func (w *World) MovementSimulation() (err error) {
 			return err
 		}
 		for pos, agents := range nation.PosToAgents {
-			w.agentsMap.SetRawCell(new(agents), pos)
+			a, _ := w.agentsMap.GetCell(pos)
+			if a == nil {
+				w.agentsMap.SetRawCell(&agents, pos)
+				continue
+			}
+			*a = append(agents, *a...)
+			w.agentsMap.SetRawCell(a, pos)
+
+		}
+		for _, character := range nation.Characters {
+			preExistingAgents, _ := w.agentsMap.GetCell(character.pos)
+			if preExistingAgents == nil {
+				w.agentsMap.SetRawCell(&[]*Agent{&character.Agent}, character.pos)
+				continue
+			}
+			fmt.Printf("%+v\n", preExistingAgents)
+			*preExistingAgents = append(*preExistingAgents, &character.Agent)
+			w.agentsMap.SetRawCell(preExistingAgents, character.pos)
 		}
 	}
 	err = w.Zombies.moveZombies()
@@ -270,6 +287,10 @@ func (w *World) MovementSimulation() (err error) {
 		return err
 	}
 	for pos, agents := range w.Zombies.PosToAgents {
+		a, _ := w.agentsMap.GetCell(pos)
+		if a != nil {
+			agents = append(agents, *a...)
+		}
 		w.agentsMap.SetRawCell(new(agents), pos)
 	}
 	return nil
@@ -305,12 +326,12 @@ func (w *World) RefreshZombieVision() error {
 	return w.Zombies.refreshBfsMap(zombieGoals)
 }
 
-func (w *World) zombieEatAgent(agent *Agent) error {
-	err := w.Nations[agent.idNation].removeAgent(agent)
+func (w *World) zombieEatAgent(agent *Agent, spawnAt common.Vec[int32]) error {
+	err := w.Nations[agent.IdNation].removeAgent(agent)
 	if err != nil {
 		return err
 	}
-	w.Zombies.addZombie(agent)
+	w.Zombies.addZombie(agent, spawnAt)
 	return nil
 }
 
@@ -320,9 +341,26 @@ func (w *World) ZombieEat() error {
 			continue
 		}
 		population := []*Agent{}
-		for _, nation := range w.Nations {
-			for _, agent := range nation.PosToAgents[pos] {
+		//TODO: define for each agent a attack range
+		n, _ := w.agentsMap.GetNeighborhoodCells(pos, common.Vec[int32]{X: 3, Y: 3})
+		if n == nil {
+			continue
+		}
+		for _, agents := range n {
+			if agents == nil {
+				continue
+			}
+			for _, agent := range *agents {
+				if agent == nil {
+					continue
+				}
 				if agent.Status == DEAD {
+					continue
+				}
+				if agent.Job == ZOMBIE {
+					continue
+				}
+				if agent.Job == "" {
 					continue
 				}
 				population = append(population, agent)
@@ -332,7 +370,8 @@ func (w *World) ZombieEat() error {
 			return nil
 		}
 		i := rand.Intn(len(population))
-		w.zombieEatAgent(population[i])
+
+		w.zombieEatAgent(population[i], pos)
 	}
 	return nil
 }

@@ -23,8 +23,8 @@ const (
 )
 
 type Agent struct {
-	id       ID_AGENT
-	idNation ID_NATION
+	Id       ID_AGENT
+	IdNation ID_NATION
 	Job      Job
 	touch    int
 	paths    *common.Queue[common.Vec[int32]]
@@ -32,11 +32,11 @@ type Agent struct {
 	pos      common.Vec[int32]
 }
 
-func newPerson(job Job, idNation ID_NATION, pos common.Vec[int32]) Agent {
+func newAgent(job Job, idNation ID_NATION, pos common.Vec[int32]) Agent {
 	p := Agent{
-		id:       CURRENT_ID_AGENT,
+		Id:       CURRENT_ID_AGENT,
 		Job:      job,
-		idNation: idNation,
+		IdNation: idNation,
 		pos:      pos,
 	}
 	CURRENT_ID_AGENT++

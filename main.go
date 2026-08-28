@@ -102,21 +102,20 @@ func main() {
 			rl.BeginTextureMode(texture)
 			{
 				rl.BeginMode2D(camera)
-				render.TickPeopleAnimation()
 				err = w.CellMap.ForEach(func(x, y int32, _ *core.BaseCell) error {
 					return render.DrawCell(x, y, w)
 				})
 				if err != nil {
 					panic(err)
 				}
-				//				w.Zombies.BfsMap.ForEach(func(x, y int32, n *int16) error {
-				//					cellX := SIZE_CELL * x
-				//					cellY := SIZE_CELL * y
-				//					if n != nil {
-				//						rl.DrawText(fmt.Sprint(*n), cellX+SIZE_CELL/2, cellY+SIZE_CELL/2, 3, rl.Red)
-				//					}
-				//					return nil
-				//				})
+				w.Zombies.BfsMap.ForEach(func(x, y int32, n *int16) error {
+					cellX := SIZE_CELL * x
+					cellY := SIZE_CELL * y
+					if n != nil {
+						rl.DrawText(fmt.Sprint(*n), cellX+SIZE_CELL/2, cellY+SIZE_CELL/2, 3, rl.Red)
+					}
+					return nil
+				})
 				rl.EndMode2D()
 			}
 			rl.EndTextureMode()
@@ -171,7 +170,7 @@ func main() {
 		}
 		if rl.IsKeyPressed(rl.KeyC) {
 			if len(w.Nations) != 0 {
-				w.Nations[0].Characters = append(w.Nations[0].Characters, new(core.NewCharacter(getPosMouse())))
+				w.Nations[0].Characters = append(w.Nations[0].Characters, new(core.NewCharacter(0, getPosMouse())))
 				if err != nil {
 					println(err.Error())
 				}

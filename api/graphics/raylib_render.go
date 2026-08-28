@@ -5,8 +5,6 @@ import (
 	"GameOfLife/core"
 	"errors"
 	"fmt"
-	"math/rand"
-	"time"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -60,26 +58,18 @@ func (r *RaylibRender) DrawCell(x, y int32, w *core.World) error {
 	rl.DrawRectangle(cellX, cellY, r.SizeCell.X, r.SizeCell.Y, color)
 	rl.DrawText(fmt.Sprint(cell.VirtualNPopulation), cellX, cellY, 3, rl.Red)
 	rl.DrawText(fmt.Sprint(people), cellX+10, cellY, 3, rl.Red)
-	drawPeopleDots(cellX, cellY, r.SizeCell.X, r.SizeCell.Y, people, r.PeopleSeed, rl.Red)
-	drawPeopleDots(cellX, cellY, r.SizeCell.X, r.SizeCell.Y, zombie, r.PeopleSeed, rl.Black)
+	if people != 0 {
+		rl.DrawText(fmt.Sprint(people), cellX+r.SizeCell.X/2, cellY+r.SizeCell.Y/2-15, 4, rl.Black)
+		rl.DrawCircle(cellX+r.SizeCell.X/2+5, cellY+r.SizeCell.Y/2+5, 10, rl.Blue)
+	}
+
+	if zombie != 0 {
+		rl.DrawText(fmt.Sprint(zombie), cellX+r.SizeCell.X/2, cellY+r.SizeCell.Y/2-15, 4, rl.Black)
+		rl.DrawCircle(cellX+r.SizeCell.X/2+5, cellY+r.SizeCell.Y/2+5, 10, rl.Red)
+	}
 
 	if playable {
-		rl.DrawCircle(cellX+r.SizeCell.X/2, cellY+r.SizeCell.Y/2, 10, rl.Orange)
+		rl.DrawCircle(cellX+r.SizeCell.X/2+5, cellY+r.SizeCell.Y/2+5, 10, rl.Orange)
 	}
 	return nil
-}
-
-func (r *RaylibRender) TickPeopleAnimation() {
-	r.PeopleSeed = int8(time.Now().Unix())
-}
-
-func drawPeopleDots(x, y, w, h int32, people int, seed int8, color rl.Color) {
-	if people <= 0 {
-		return
-	}
-	rand := rand.New(rand.NewSource(int64(int32(seed) * x * y)))
-	for range people {
-		xOffset, yOffset := rand.Int31n(w-3), rand.Int31n(h-3)
-		rl.DrawRectangle(xOffset+x, yOffset+y, 3, 3, color)
-	}
 }
