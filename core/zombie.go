@@ -14,11 +14,11 @@ func NewZombieHorde(w *World) ZombieHorde {
 	var horde ZombieHorde
 	horde = ZombieHorde{
 		AgentGroup: AgentGroup{
-			world:        w,
-			PosToIdAgent: map[common.Vec[int32]][]ID_AGENT{},
-			agents:       common.NewSortSlice(func(a, b *Agent) int { return int(a.id) - int(b.id) }),
+			world:       w,
+			PosToAgents: map[common.Vec[int32]][]*Agent{},
+			agents:      common.NewSortSlice(func(a, b *Agent) int { return int(a.id) - int(b.id) }),
 		},
-		BfsMap: NewMap[int16](w.Map.size),
+		BfsMap: NewMap[int16](w.CellMap.size),
 	}
 	return horde
 }
@@ -45,14 +45,14 @@ func (horde *ZombieHorde) moveZombie(person *Agent) error {
 
 	cost := neighborhood[person.pos]
 	delete(neighborhood, person.pos)
-	for i := range neighborhood {
+	for pos := range neighborhood {
 		if *cost < 0 {
-			delete(neighborhood, i)
+			delete(neighborhood, pos)
 		}
-		if *neighborhood[i] < *cost {
-			horde.PosToIdAgent[person.pos] = slices.DeleteFunc(horde.PosToIdAgent[person.pos], func(a ID_AGENT) bool { return person.id == a })
-			horde.PosToIdAgent[i] = append(horde.PosToIdAgent[i], person.id)
-			person.pos = i
+		if *neighborhood[pos] < *cost {
+			horde.PosToAgents[person.pos] = slices.DeleteFunc(horde.PosToAgents[person.pos], func(a *Agent) bool { return person.id == a.id })
+			horde.PosToAgents[pos] = append(horde.PosToAgents[pos], person)
+			person.pos = pos
 			person.TouchMOVE()
 			return nil
 		}
@@ -62,7 +62,14 @@ func (horde *ZombieHorde) moveZombie(person *Agent) error {
 }
 
 func (z *ZombieHorde) refreshBfsMap(starts []common.Vec[int32]) error {
-	m, err := PerformPathFinding_BFS(z.world.Map, starts)
+	m, err := PerformPathFinding_BFS(z.world, starts, func(pos common.Vec[int32]) bool {
+		if c, err := z.world.CellMap.GetCell(pos); err == nil {
+			if slices.Contains([]CellType{WATER, STONE}, c.cellType) {
+				return false
+			}
+		}
+		return true
+	})
 	if err != nil {
 		return err
 	}
@@ -72,7 +79,7 @@ func (z *ZombieHorde) refreshBfsMap(starts []common.Vec[int32]) error {
 
 func (z *ZombieHorde) addZombie(agent *Agent) error {
 	if agent.paths != nil {
-		cell, _ := z.world.Map.GetCell(*agent.paths.GetLast())
+		cell, _ := z.world.CellMap.GetCell(*agent.paths.GetLast())
 		cell.VirtualNPopulation--
 	}
 	agent.Status = MOVING

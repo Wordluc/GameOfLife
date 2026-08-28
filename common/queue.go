@@ -44,7 +44,7 @@ func (q *Queue[t]) Enqueue(values ...t) {
 }
 
 func (q *Queue[t]) DenqueueN(n int) (values []t, end bool) {
-	if q.index+n+1 >= len(q.values) {
+	if n < 0 || q.index+n+1 >= len(q.values) {
 		values = q.values[q.index:]
 		q.index = len(q.values)
 		return values, true
@@ -61,6 +61,13 @@ func (q *Queue[t]) Denqueue() (value t, end bool) {
 	value = q.values[q.index]
 	q.index++
 	return value, false
+}
+
+func (q *Queue[t]) GlazeDenqueue() (value t) {
+	if q.index >= len(q.values) {
+		return value
+	}
+	return q.values[q.index]
 }
 
 func (q *Queue[t]) GetBack(by int) (value *t) {

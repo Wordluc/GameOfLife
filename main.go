@@ -103,7 +103,7 @@ func main() {
 			{
 				rl.BeginMode2D(camera)
 				render.TickPeopleAnimation()
-				err = w.Map.ForEach(func(x, y int32, _ *core.BaseCell) error {
+				err = w.CellMap.ForEach(func(x, y int32, _ *core.BaseCell) error {
 					return render.DrawCell(x, y, w)
 				})
 				if err != nil {
@@ -251,7 +251,7 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-			timer -= 0.5
+			timer = 0
 		}
 		if 1/rl.GetFrameTime() < 50 {
 			fmt.Printf("fps:%v\n", 1/rl.GetFrameTime())

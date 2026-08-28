@@ -16,10 +16,10 @@ type Nation struct {
 func NewNation(w *World, id ID_NATION) Nation {
 	return Nation{
 		AgentGroup: AgentGroup{
-			world:        w,
-			PosToIdAgent: map[common.Vec[int32]][]ID_AGENT{},
-			agents:       common.NewSortSlice(func(a, b *Agent) int { return int(a.id) - int(b.id) }),
-			id:           id,
+			world:       w,
+			PosToAgents: map[common.Vec[int32]][]*Agent{},
+			agents:      common.NewSortSlice(func(a, b *Agent) int { return int(a.id) - int(b.id) }),
+			id:          id,
 		},
 		resources: map[Resource]float32{},
 	}
@@ -43,8 +43,8 @@ func (n *Nation) movePerson(person *Agent) error {
 		return nil
 	}
 	person.Status = MOVING
-	n.PosToIdAgent[*from] = slices.DeleteFunc(n.PosToIdAgent[*from], func(a ID_AGENT) bool { return person.id == a })
-	n.PosToIdAgent[to] = append(n.PosToIdAgent[to], person.id)
+	n.PosToAgents[*from] = slices.DeleteFunc(n.PosToAgents[*from], func(a *Agent) bool { return person.id == a.id })
+	n.PosToAgents[to] = append(n.PosToAgents[to], person)
 	person.pos = to
 	person.TouchMOVE()
 	return nil
@@ -92,7 +92,7 @@ func (w *Nation) moveCharacters() (err error) {
 func (w *Nation) Harvesting() error {
 	for celltype, cellsPos := range w.world.CellType_ToPosCell {
 		for _, pos := range cellsPos {
-			n := len(w.PosToIdAgent[pos])
+			n := len(w.PosToAgents[pos])
 			for _, q := range CellTypeToResource[celltype] {
 				w.resources[q.What] += float32(n) * q.Amount
 			}
@@ -131,11 +131,11 @@ func (w *Nation) Starving() error {
 		}
 		if person.paths != nil {
 			lastPosCell := person.paths.GetLast()
-			lastCell, _ := w.world.Map.GetCell(*lastPosCell)
+			lastCell, _ := w.world.CellMap.GetCell(*lastPosCell)
 			lastCell.VirtualNPopulation--
 		}
 		person.Status = DEAD
-		w.PosToIdAgent[person.pos] = slices.DeleteFunc(w.PosToIdAgent[person.pos], func(a ID_AGENT) bool { return person.id == a })
+		w.PosToAgents[person.pos] = slices.DeleteFunc(w.PosToAgents[person.pos], func(a *Agent) bool { return person.id == a.id })
 		w.world.toRunPathFindingForAll()
 		break
 	}

@@ -6,14 +6,15 @@ import (
 	"slices"
 )
 
-func PerformPathFinding_BFS(m *Map[BaseCell], starts []common.Vec[int32]) (res Map[int16], err error) {
+func PerformPathFinding_BFS(w *World, starts []common.Vec[int32], canGo func(pos common.Vec[int32]) bool) (res Map[int16], err error) {
+	m := w.CellMap
 	var queue *common.Queue[Quantity[common.Vec[int32], int16]] = common.NewQueue[Quantity[common.Vec[int32], int16]](nil, nil)
 	var visited map[common.Vec[int32]]bool = make(map[common.Vec[int32]]bool, m.size.X*m.size.Y)
 	res = NewMap[int16](m.size)
 	var cost int16
 	err = m.ForEach(func(x, y int32, c *BaseCell) error {
 		cost = int16(math.MaxInt8)
-		if slices.Contains([]CellType{STONE, WATER}, c.cellType) {
+		if !canGo(c.pos) {
 			cost += 1
 		}
 		return res.SetRawCell(new(cost), c.pos)

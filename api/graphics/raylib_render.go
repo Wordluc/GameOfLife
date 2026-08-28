@@ -19,7 +19,7 @@ type RaylibRender struct {
 func (r *RaylibRender) DrawCell(x, y int32, w *core.World) error {
 	var color rl.Color
 	pos := common.Vec[int32]{X: x, Y: y}
-	cell, err := w.Map.GetCell(pos)
+	cell, err := w.CellMap.GetCell(pos)
 	if err != nil {
 		return err
 	}
@@ -51,12 +51,12 @@ func (r *RaylibRender) DrawCell(x, y int32, w *core.World) error {
 	var people int
 	var playable bool
 	for _, nation := range w.Nations {
-		people += len(nation.GetAgentsIdInsideCellf(pos, func(a *core.Agent) bool { return a.Status != core.DEAD }))
+		people += len(nation.GetAgentsAt(pos, func(a *core.Agent) bool { return a.Status != core.DEAD }))
 		if len(nation.GetCharactersAt(pos)) != 0 {
 			playable = true
 		}
 	}
-	zombie := len(w.Zombies.GetAgentsIdInsideCell(pos))
+	zombie := len(w.Zombies.GetAgentsAt(pos, nil))
 	rl.DrawRectangle(cellX, cellY, r.SizeCell.X, r.SizeCell.Y, color)
 	rl.DrawText(fmt.Sprint(cell.VirtualNPopulation), cellX, cellY, 3, rl.Red)
 	rl.DrawText(fmt.Sprint(people), cellX+10, cellY, 3, rl.Red)

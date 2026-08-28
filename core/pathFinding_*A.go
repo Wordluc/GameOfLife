@@ -82,20 +82,20 @@ func foreachNeighboarhood(m *Map[BaseCell], pos common.Vec[int32], callback func
 		}
 	}
 }
-
-func PerformPathFinding_A(m *Map[BaseCell], start, goal common.Vec[int32]) []common.Vec[int32] {
+func PerformPathFinding_A(m *Map[BaseCell], start, goal common.Vec[int32], canGo func(pos common.Vec[int32]) bool) []common.Vec[int32] {
 	var discovered map[common.Vec[int32]]*pathFindigInformation = make(map[common.Vec[int32]]*pathFindigInformation)
 	var toDiscover []*pathFindigInformation = make([]*pathFindigInformation, 0)
 	startingOrigin := pathFindigInformation{
 		pos: start,
 	}
+	if canGo == nil {
+		canGo = func(pos common.Vec[int32]) bool { return true }
+	}
 	discoverNeighboardhood := func(origin pathFindigInformation) func(x, y int32) (stop bool) {
 		return func(x, y int32) (stop bool) {
 			pos := common.Vec[int32]{X: x, Y: y}
-			if c, err := m.GetCell(pos); err == nil {
-				if slices.Contains([]CellType{WATER, STONE}, c.cellType) {
-					return false
-				}
+			if !canGo(pos) {
+				return false
 			}
 
 			weightFromStart := origin.weightFromStart + 2
