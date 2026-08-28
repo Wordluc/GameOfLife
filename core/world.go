@@ -367,8 +367,6 @@ func (w *World) SetPathCharactersTo(end common.Vec[int32], characters ...*Charac
 			return true
 		}), nil)
 		characters[i].paths.Denqueue()
-		pos, _ := characters[i].paths.Denqueue()
-		characters[i].pos = pos
 	}
 	return nil
 }
