@@ -62,7 +62,7 @@ func (horde *ZombieHorde) moveZombie(person *Agent) error {
 }
 
 func (z *ZombieHorde) refreshBfsMap(starts []common.Vec[int32]) error {
-	m, err := PerformPathFinding_BFS(z.world, starts, func(pos common.Vec[int32]) bool {
+	m, err := PerformPathFinding_BFS(z.world.CellMap, starts, func(pos common.Vec[int32]) bool {
 		if c, err := z.world.CellMap.GetCell(pos); err == nil {
 			if slices.Contains([]CellType{WATER, STONE}, c.cellType) {
 				return false
