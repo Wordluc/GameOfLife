@@ -90,7 +90,7 @@ func (w *Nation) moveCharacters() (err error) {
 }
 
 func (w *Nation) Harvesting() error {
-	for celltype, cellsPos := range w.world.CellType_ToPosCell {
+	for celltype, cellsPos := range w.world.cellType_ToPosCell {
 		for _, pos := range cellsPos {
 			n := len(w.PosToAgents[pos])
 			for _, q := range CellTypeToResource[celltype] {

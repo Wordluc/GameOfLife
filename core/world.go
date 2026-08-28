@@ -23,10 +23,10 @@ func (b bindingCellTypeToCell) SetCellTypeCell(cell *BaseCell, newCellType CellT
 
 type World struct {
 	CellMap            *Map[BaseCell]
-	AgentsMap          *Map[[]*Agent]
+	agentsMap          *Map[[]*Agent]
 	Nations            map[ID_NATION]*Nation
 	Zombies            *ZombieHorde
-	CellType_ToPosCell bindingCellTypeToCell
+	cellType_ToPosCell bindingCellTypeToCell
 	IdNations          []ID_NATION
 
 	personNeedingPathFinding *common.Queue[*Agent]
@@ -35,9 +35,9 @@ type World struct {
 func NewWorld(size common.Vec[int32]) (w *World) {
 	w = &World{}
 	w.CellMap = new(NewMap[BaseCell](size))
-	w.AgentsMap = new(NewMap[[]*Agent](size))
+	w.agentsMap = new(NewMap[[]*Agent](size))
 	w.Nations = map[ID_NATION]*Nation{}
-	w.CellType_ToPosCell = make(bindingCellTypeToCell)
+	w.cellType_ToPosCell = make(bindingCellTypeToCell)
 	w.personNeedingPathFinding = common.NewQueue[*Agent](nil, nil)
 	w.Zombies = new(NewZombieHorde(w))
 	return w
@@ -47,7 +47,7 @@ func (w *World) GenerateMap() {
 	var c *BaseCell
 	w.CellMap.SetEachElement(func(x, y int32) *BaseCell {
 		c = NewEmptyBaseCell(common.Vec[int32]{X: x, Y: y})
-		w.CellType_ToPosCell.SetCellTypeCell(c, GRASS)
+		w.cellType_ToPosCell.SetCellTypeCell(c, GRASS)
 		return c
 	})
 }
@@ -84,7 +84,7 @@ func (w *World) setNewPathFinding(people ...*Agent) {
 			continue
 		}
 		cellTypeToGo = JobToCells[person.Job]
-		posCellsCouldGo = w.CellType_ToPosCell[cellTypeToGo]
+		posCellsCouldGo = w.cellType_ToPosCell[cellTypeToGo]
 		if len(posCellsCouldGo) == 0 {
 			continue
 		}
@@ -116,7 +116,7 @@ func (w *World) setNewPathFinding(people ...*Agent) {
 				path = cachedPath[person.pos][goal]
 			} else {
 				path = PerformPathFinding_A(w.CellMap, person.pos, goal, func(pos common.Vec[int32]) bool {
-					agents, _ := w.AgentsMap.GetCell(pos)
+					agents, _ := w.agentsMap.GetCell(pos)
 					if agents != nil && len(*agents) != 0 && slices.ContainsFunc(*agents, func(a *Agent) bool { return a.Job != person.Job && a.Status == WORKING }) {
 						return false
 					}
@@ -183,7 +183,7 @@ func (w *World) AddBlock(cellType CellType, pos common.Vec[int32], size common.V
 		if err != nil {
 			return err
 		}
-		w.CellType_ToPosCell.SetCellTypeCell(cell, cellType)
+		w.cellType_ToPosCell.SetCellTypeCell(cell, cellType)
 		err = definition.convert(cell)
 		if err != nil {
 			return err
@@ -208,7 +208,7 @@ func (w *World) AddBlock(cellType CellType, pos common.Vec[int32], size common.V
 
 func (w *World) GetCellsByType(cellType CellType) (res []*BaseCell, err error) {
 	var cell *BaseCell
-	for _, pos := range w.CellType_ToPosCell[cellType] {
+	for _, pos := range w.cellType_ToPosCell[cellType] {
 		cell, err = w.CellMap.GetCell(pos)
 		if err != nil {
 			return nil, err
@@ -251,7 +251,7 @@ func (w *World) NewPerson(job Job, where common.Vec[int32], idNation ID_NATION) 
 }
 
 func (w *World) MovementSimulation() (err error) {
-	w.AgentsMap = new(NewMap[[]*Agent](w.AgentsMap.size))
+	w.agentsMap = new(NewMap[[]*Agent](w.agentsMap.size))
 	for _, nation := range w.Nations {
 		err = nation.movePeople()
 		if err != nil {
@@ -262,7 +262,7 @@ func (w *World) MovementSimulation() (err error) {
 			return err
 		}
 		for pos, agents := range nation.PosToAgents {
-			w.AgentsMap.SetRawCell(new(agents), pos)
+			w.agentsMap.SetRawCell(new(agents), pos)
 		}
 	}
 	err = w.Zombies.moveZombies()
@@ -270,7 +270,7 @@ func (w *World) MovementSimulation() (err error) {
 		return err
 	}
 	for pos, agents := range w.Zombies.PosToAgents {
-		w.AgentsMap.SetRawCell(new(agents), pos)
+		w.agentsMap.SetRawCell(new(agents), pos)
 	}
 	return nil
 }
