@@ -35,9 +35,6 @@ func (horde *ZombieHorde) moveZombies() (err error) {
 }
 
 func (horde *ZombieHorde) moveZombie(person *Agent) error {
-	if person.IsTouchMOVE() {
-		return nil
-	}
 	neighborhood, _ := horde.BfsMap.GetNeighborhoodCells(person.pos, common.Vec[int32]{X: 3, Y: 3})
 	if neighborhood == nil {
 		return nil
@@ -59,7 +56,6 @@ func (horde *ZombieHorde) moveZombie(person *Agent) error {
 			horde.PosToAgents[person.pos] = slices.DeleteFunc(horde.PosToAgents[person.pos], func(a *Agent) bool { return person.Id == a.Id })
 			horde.PosToAgents[pos] = append(horde.PosToAgents[pos], person)
 			person.pos = pos
-			person.TouchMOVE()
 			return nil
 		}
 	}

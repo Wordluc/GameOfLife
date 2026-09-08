@@ -1,6 +1,9 @@
 package core
 
-import "GameOfLife/common"
+import (
+	"GameOfLife/common"
+	"errors"
+)
 
 type Job string
 
@@ -43,10 +46,22 @@ func newAgent(job Job, idNation ID_NATION, pos common.Vec[int32]) Agent {
 	return p
 }
 
-func (p *Agent) TouchMOVE() {
-	p.touch = TOUCH_MOVE_PERSON_ID
-}
-
-func (p *Agent) IsTouchMOVE() bool {
-	return p.touch == TOUCH_MOVE_PERSON_ID
+func (a *Agent) FollowPath_StarA() (to *common.Vec[int32], err error) {
+	if a.paths == nil {
+		return nil, nil
+	}
+	from := a.paths.GetBack(1)
+	if from != nil && !from.IsEqual(a.pos) {
+		return nil, errors.New("Error initial position")
+	}
+	{
+		to, end := a.paths.Denqueue()
+		if end {
+			a.Status = WORKING
+			return nil, nil
+		}
+		a.Status = MOVING
+		a.pos = to
+	}
+	return &a.pos, nil
 }

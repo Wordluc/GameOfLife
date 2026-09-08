@@ -245,7 +245,6 @@ func (w *World) NewPerson(job Job, where common.Vec[int32], idNation ID_NATION) 
 		w.AddNation(idNation, map[Resource]float32{FOOD: 1000})
 	}
 	p := w.Nations[idNation].newAgent(job, where)
-	p.TouchMOVE()
 	w.toRunPathFinding(p)
 	return p
 }

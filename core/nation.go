@@ -2,7 +2,6 @@ package core
 
 import (
 	"GameOfLife/common"
-	"errors"
 	"math/rand"
 	"slices"
 )
@@ -26,44 +25,17 @@ func NewNation(w *World, id ID_NATION) Nation {
 }
 
 func (n *Nation) movePerson(person *Agent) error {
-	if person.IsTouchMOVE() {
+	from := person.pos
+	to, err := person.FollowPath_StarA()
+	if err != nil {
 		return nil
 	}
-	if person.paths == nil {
+	if to == nil {
 		return nil
 	}
-	from := person.paths.GetBack(1)
-	if from != nil && !from.IsEqual(person.pos) {
-		return errors.New("Error initial position")
-	}
-
-	to, end := person.paths.Denqueue()
-	if end {
-		person.Status = WORKING
-		return nil
-	}
-	person.Status = MOVING
-	n.PosToAgents[*from] = slices.DeleteFunc(n.PosToAgents[*from], func(a *Agent) bool { return person.Id == a.Id })
-	n.PosToAgents[to] = append(n.PosToAgents[to], person)
-	person.pos = to
-	person.TouchMOVE()
-	return nil
-}
-
-func (n *Nation) moveCharacter(playable *Character) error {
-	if playable.paths == nil {
-		return nil
-	}
-	from := playable.paths.GetBack(1)
-	if from != nil && !from.IsEqual(playable.pos) {
-		return errors.New("Error initial position")
-	}
-
-	to, end := playable.paths.Denqueue()
-	if end {
-		return nil
-	}
-	playable.pos = to
+	n.PosToAgents[from] = slices.DeleteFunc(n.PosToAgents[from], func(a *Agent) bool { return person.Id == a.Id })
+	n.PosToAgents[*to] = append(n.PosToAgents[*to], person)
+	person.pos = *to
 	return nil
 }
 
@@ -81,7 +53,7 @@ func (w *Nation) movePeople() (err error) {
 func (w *Nation) moveCharacters() (err error) {
 	var character *Character
 	for _, character = range w.Characters {
-		err = w.moveCharacter(character)
+		_, err = character.FollowPath_StarA()
 		if err != nil {
 			return err
 		}
