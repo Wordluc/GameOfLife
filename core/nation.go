@@ -2,73 +2,41 @@ package core
 
 import (
 	"GameOfLife/common"
-	"errors"
 	"math/rand"
 	"slices"
 )
 
 type Nation struct {
-	AgentGroup
+	AgentGroup[*Pawn]
 	resources  map[Resource]float32
 	Characters []*Character
+	id         ID_NATION
 }
 
 func NewNation(w *World, id ID_NATION) Nation {
 	return Nation{
-		AgentGroup: AgentGroup{
-			world:       w,
-			PosToAgents: map[common.Vec[int32]][]*Agent{},
-			agents:      common.NewSortSlice(func(a, b *Agent) int { return int(a.Id) - int(b.Id) }),
-			id:          id,
-		},
-		resources: map[Resource]float32{},
+		AgentGroup: NewAgentGroup[*Pawn](w),
+		id:         id,
+		resources:  map[Resource]float32{},
 	}
 }
 
-func (n *Nation) movePerson(person *Agent) error {
-	if person.IsTouchMOVE() {
+func (n *Nation) movePerson(person *Pawn) error {
+	from := person.pos
+	to, err := person.Move()
+	if err != nil {
+		return err
+	}
+	if to == nil {
 		return nil
 	}
-	if person.paths == nil {
-		return nil
-	}
-	from := person.paths.GetBack(1)
-	if from != nil && !from.IsEqual(person.pos) {
-		return errors.New("Error initial position")
-	}
-
-	to, end := person.paths.Denqueue()
-	if end {
-		person.Status = WORKING
-		return nil
-	}
-	person.Status = MOVING
-	n.PosToAgents[*from] = slices.DeleteFunc(n.PosToAgents[*from], func(a *Agent) bool { return person.Id == a.Id })
-	n.PosToAgents[to] = append(n.PosToAgents[to], person)
-	person.pos = to
-	person.TouchMOVE()
-	return nil
-}
-
-func (n *Nation) moveCharacter(playable *Character) error {
-	if playable.paths == nil {
-		return nil
-	}
-	from := playable.paths.GetBack(1)
-	if from != nil && !from.IsEqual(playable.pos) {
-		return errors.New("Error initial position")
-	}
-
-	to, end := playable.paths.Denqueue()
-	if end {
-		return nil
-	}
-	playable.pos = to
+	n.PosToAgents[from] = slices.DeleteFunc(n.PosToAgents[from], func(a *Pawn) bool { return person.id == a.id })
+	n.PosToAgents[*to] = append(n.PosToAgents[*to], person)
 	return nil
 }
 
 func (w *Nation) movePeople() (err error) {
-	var person *Agent
+	var person *Pawn
 	for _, person = range w.agents.GetAll() {
 		err = w.movePerson(person)
 		if err != nil {
@@ -81,7 +49,7 @@ func (w *Nation) movePeople() (err error) {
 func (w *Nation) moveCharacters() (err error) {
 	var character *Character
 	for _, character = range w.Characters {
-		err = w.moveCharacter(character)
+		_, err = character.Move()
 		if err != nil {
 			return err
 		}
@@ -100,10 +68,10 @@ func (w *Nation) Harvesting() error {
 	}
 
 	for _, person := range w.agents.GetAll() {
-		if person.Status == DEAD {
+		if person.status == DEAD {
 			continue
 		}
-		for _, q := range JobToConsumingCost[person.Job] {
+		for _, q := range JobToConsumingCost[person.job] {
 			w.resources[q.What] -= q.Amount
 		}
 	}
@@ -117,25 +85,25 @@ func (w *Nation) Starving() error {
 	var maxTime = 10
 	population := w.agents.GetAll()
 	r := rand.Intn(len(population))
-	var person *Agent
+	var person *Pawn
 	for {
 		if maxTime == 0 {
 			continue
 		}
 		person = population[r]
 		//TO OPTIMIZE
-		if person.Status == DEAD {
+		if person.status == DEAD {
 			r = rand.Intn(len(population))
 			maxTime--
 			break
 		}
-		if person.paths != nil {
-			lastPosCell := person.paths.GetLast()
+		if person.path != nil {
+			lastPosCell := person.path.GetLast()
 			lastCell, _ := w.world.CellMap.GetCell(*lastPosCell)
 			lastCell.VirtualNPopulation--
 		}
-		person.Status = DEAD
-		w.PosToAgents[person.pos] = slices.DeleteFunc(w.PosToAgents[person.pos], func(a *Agent) bool { return person.Id == a.Id })
+		person.status = DEAD
+		w.PosToAgents[person.pos] = slices.DeleteFunc(w.PosToAgents[person.pos], func(a *Pawn) bool { return person.id == a.id })
 		w.world.toRunPathFindingForAll()
 		break
 	}

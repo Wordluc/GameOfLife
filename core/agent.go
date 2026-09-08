@@ -22,31 +22,25 @@ const (
 	STOP    AgentStatus = "STOP"
 )
 
-type Agent struct {
-	Id       ID_AGENT
-	IdNation ID_NATION
-	Job      Job
-	touch    int
-	paths    *common.Queue[common.Vec[int32]]
-	Status   AgentStatus
-	pos      common.Vec[int32]
+type BaseAgent struct {
+	id  int
+	pos common.Vec[int32]
 }
 
-func newAgent(job Job, idNation ID_NATION, pos common.Vec[int32]) Agent {
-	p := Agent{
-		Id:       CURRENT_ID_AGENT,
-		Job:      job,
-		IdNation: idNation,
-		pos:      pos,
-	}
-	CURRENT_ID_AGENT++
-	return p
+func (b *BaseAgent) GetPos() common.Vec[int32] {
+	return b.pos
 }
 
-func (p *Agent) TouchMOVE() {
-	p.touch = TOUCH_MOVE_PERSON_ID
+func (b *BaseAgent) SetPos(p common.Vec[int32]) {
+	b.pos = p
 }
 
-func (p *Agent) IsTouchMOVE() bool {
-	return p.touch == TOUCH_MOVE_PERSON_ID
+func (b *BaseAgent) GetId() int {
+	return b.id
+}
+
+type Agent interface {
+	GetPos() common.Vec[int32]
+	SetPos(common.Vec[int32])
+	GetId() int
 }

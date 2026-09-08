@@ -6,21 +6,25 @@ import (
 	"slices"
 )
 
-type ID_AGENT int
+var CURRENT_ID_AGENT int32 = 1
 
-var CURRENT_ID_AGENT ID_AGENT = 1
-
-type AgentGroup struct {
+type AgentGroup[iAgent Agent] struct {
 	world            *World
-	agents           *common.SortSlice[*Agent]
+	agents           *common.SortSlice[iAgent]
 	toRunPathFinding bool
-	PosToAgents      map[common.Vec[int32]][]*Agent
-	id               ID_NATION
+	PosToAgents      map[common.Vec[int32]][]iAgent
 }
 
-func (w *AgentGroup) GetAgentsAt(pos common.Vec[int32], condition func(*Agent) bool) (res []*Agent) {
+func NewAgentGroup[iAgent Agent](w *World) AgentGroup[iAgent] {
+	return AgentGroup[iAgent]{
+		agents: common.NewSortSlice(func(a, b iAgent) int { return a.GetId() - b.GetId() }),
+		world:  w,
+	}
+}
+
+func (w *AgentGroup[iAgent]) GetAgentsAt(pos common.Vec[int32], condition func(iAgent) bool) (res []iAgent) {
 	if condition == nil {
-		condition = func(_ *Agent) bool { return true }
+		condition = func(_ iAgent) bool { return true }
 	}
 
 	for i, agent := range w.PosToAgents[pos] {
@@ -31,28 +35,18 @@ func (w *AgentGroup) GetAgentsAt(pos common.Vec[int32], condition func(*Agent) b
 	return res
 }
 
-func (w *AgentGroup) newAgent(job Job, where common.Vec[int32]) *Agent {
-	p := new(newAgent(job, w.id, where))
-	w.agents.Insert(p)
-	w.PosToAgents[where] = append(w.PosToAgents[where], p)
-	return p
-}
-
-func (w *AgentGroup) addAgent(agent *Agent, where common.Vec[int32]) {
+func (w *AgentGroup[iAgent]) AddAgent(agent iAgent) {
+	pos := agent.GetPos()
 	w.agents.Insert(agent)
-	agent.pos = where
-	if agent.paths != nil {
-		cell, _ := w.world.CellMap.GetCell(*agent.paths.GetLast())
-		cell.VirtualNPopulation--
-	}
-	w.PosToAgents[where] = append(w.PosToAgents[where], agent)
+	agent.SetPos(pos)
+	w.PosToAgents[pos] = append(w.PosToAgents[pos], agent)
 }
 
-func (w *Nation) removeAgent(agent *Agent) (err error) {
+func (w *AgentGroup[iAgent]) RemoveAgent(agent iAgent) (err error) {
 	removed := w.agents.Remove(agent)
 	if !removed {
 		return errors.New("Error removing agent")
 	}
-	w.PosToAgents[agent.pos] = slices.DeleteFunc(w.PosToAgents[agent.pos], func(a *Agent) bool { return a.Id == agent.Id })
+	w.PosToAgents[agent.GetPos()] = slices.DeleteFunc(w.PosToAgents[agent.GetPos()], func(a iAgent) bool { return a.GetId() == agent.GetId() })
 	return nil
 }
