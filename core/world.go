@@ -117,7 +117,7 @@ func (w *World) setNewPathFinding(people ...*Agent) {
 			} else {
 				path = PerformPathFinding_A(w.CellMap, person.pos, goal, func(pos common.Vec[int32]) bool {
 					agents, _ := w.agentsMap.GetCell(pos)
-					if agents != nil && len(*agents) != 0 && slices.ContainsFunc(*agents, func(a *Agent) bool { return a.Job != person.Job && a.Status == WORKING }) {
+					if agents != nil && len(*agents) != 0 && slices.ContainsFunc(*agents, func(a *Agent) bool { return a.Job != person.Job }) {
 						return false
 					}
 					if c, err := w.CellMap.GetCell(pos); err == nil {
@@ -264,8 +264,7 @@ func (w *World) MovementSimulation() (err error) {
 		for pos, agents := range nation.PosToAgents {
 			a, _ := w.agentsMap.GetCell(pos)
 			if a == nil {
-				w.agentsMap.SetRawCell(&agents, pos)
-				continue
+				a = &[]*Agent{}
 			}
 			*a = append(agents, *a...)
 			w.agentsMap.SetRawCell(a, pos)
@@ -274,10 +273,8 @@ func (w *World) MovementSimulation() (err error) {
 		for _, character := range nation.Characters {
 			preExistingAgents, _ := w.agentsMap.GetCell(character.pos)
 			if preExistingAgents == nil {
-				w.agentsMap.SetRawCell(&[]*Agent{&character.Agent}, character.pos)
-				continue
+				preExistingAgents = &[]*Agent{}
 			}
-			fmt.Printf("%+v\n", preExistingAgents)
 			*preExistingAgents = append(*preExistingAgents, &character.Agent)
 			w.agentsMap.SetRawCell(preExistingAgents, character.pos)
 		}
@@ -288,9 +285,10 @@ func (w *World) MovementSimulation() (err error) {
 	}
 	for pos, agents := range w.Zombies.PosToAgents {
 		a, _ := w.agentsMap.GetCell(pos)
-		if a != nil {
-			agents = append(agents, *a...)
+		if a == nil {
+			a = &[]*Agent{}
 		}
+		agents = append(agents, *a...)
 		w.agentsMap.SetRawCell(new(agents), pos)
 	}
 	return nil
@@ -403,6 +401,11 @@ func (w *World) SetPathCharactersTo(end common.Vec[int32], characters ...*Charac
 					return false
 				}
 			}
+			agents, _ := w.agentsMap.GetCell(pos)
+			if agents != nil && len(*agents) != 0 && slices.ContainsFunc(*agents, func(a *Agent) bool { return a.Job != characters[i].Job }) {
+				return false
+			}
+
 			return true
 		}), nil)
 		characters[i].paths.Denqueue()
