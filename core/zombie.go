@@ -23,21 +23,37 @@ func NewZombieHorde(w *World) ZombieHorde {
 	return horde
 }
 
-func (horde *ZombieHorde) moveZombies() (err error) {
+func (horde *ZombieHorde) moveZombies(agentMap *Map[[]*Agent]) (err error) {
 	var person *Agent
 	for _, person = range slices.Clone(horde.agents.GetAll()) {
-		err = horde.moveZombie(person)
+		from, to, err := horde.moveZombie(person)
 		if err != nil {
 			return err
 		}
+		if to == nil {
+			continue
+		}
+		agents, _ := agentMap.GetCell(from)
+		if agents == nil {
+			agents = new([]*Agent)
+		}
+		*agents = slices.DeleteFunc(*agents, func(a *Agent) bool { return a.Id == person.Id })
+		agentMap.SetRawCell(agents, from)
+
+		agents, _ = agentMap.GetCell(*to)
+		if agents == nil {
+			agents = new([]*Agent)
+		}
+		agentMap.SetRawCell(new(append(*agents, person)), *to)
 	}
 	return nil
 }
 
-func (horde *ZombieHorde) moveZombie(person *Agent) error {
+func (horde *ZombieHorde) moveZombie(person *Agent) (from common.Vec[int32], to *common.Vec[int32], err error) {
+	from = person.pos
 	neighborhood, _ := horde.BfsMap.GetNeighborhoodCells(person.pos, common.Vec[int32]{X: 3, Y: 3})
 	if neighborhood == nil {
-		return nil
+		return from, to, nil
 	}
 
 	cost := neighborhood[person.pos]
@@ -56,11 +72,19 @@ func (horde *ZombieHorde) moveZombie(person *Agent) error {
 			horde.PosToAgents[person.pos] = slices.DeleteFunc(horde.PosToAgents[person.pos], func(a *Agent) bool { return person.Id == a.Id })
 			horde.PosToAgents[pos] = append(horde.PosToAgents[pos], person)
 			person.pos = pos
-			return nil
+			return from, &person.pos, nil
+		}
+	}
+	//RANDOM MOVEMENT
+	for key := range neighborhood {
+		if *neighborhood[key] == *cost && !key.IsEqual(person.pos) {
+			horde.PosToAgents[person.pos] = slices.DeleteFunc(horde.PosToAgents[person.pos], func(a *Agent) bool { return person.Id == a.Id })
+			horde.PosToAgents[key] = append(horde.PosToAgents[key], person)
+			person.pos = key
 		}
 	}
 
-	return nil
+	return from, to, nil
 }
 
 func (z *ZombieHorde) refreshBfsMap(starts []common.Vec[int32]) error {

@@ -24,39 +24,77 @@ func NewNation(w *World, id ID_NATION) Nation {
 	}
 }
 
-func (n *Nation) movePerson(person *Agent) error {
-	from := person.pos
-	to, err := person.FollowPath_StarA()
+func (n *Nation) movePerson(person *Agent) (from common.Vec[int32], to *common.Vec[int32], err error) {
+	from = person.pos
+	to, err = person.FollowPath_StarA()
 	if err != nil {
-		return nil
+		return from, to, err
 	}
 	if to == nil {
-		return nil
+		return from, to, err
 	}
 	n.PosToAgents[from] = slices.DeleteFunc(n.PosToAgents[from], func(a *Agent) bool { return person.Id == a.Id })
 	n.PosToAgents[*to] = append(n.PosToAgents[*to], person)
 	person.pos = *to
-	return nil
+	return from, to, err
 }
 
-func (w *Nation) movePeople() (err error) {
+func (w *Nation) movePeople(agentMap *Map[[]*Agent]) (err error) {
 	var person *Agent
 	for _, person = range w.agents.GetAll() {
-		err = w.movePerson(person)
+		from, to, err := w.movePerson(person)
 		if err != nil {
 			return err
 		}
+		if to == nil {
+			continue
+		}
+		agents, _ := agentMap.GetCell(from)
+		if agents == nil {
+			agents = new([]*Agent)
+		}
+		*agents = slices.DeleteFunc(*agents, func(a *Agent) bool { return a.Id == person.Id })
+		agentMap.SetRawCell(agents, from)
+
+		agents, _ = agentMap.GetCell(*to)
+		if agents == nil {
+			agents = new([]*Agent)
+		}
+		agentMap.SetRawCell(new(append(*agents, person)), *to)
+
 	}
 	return nil
 }
 
-func (w *Nation) moveCharacters() (err error) {
+func (n *Nation) moveCharacter(character *Character) (from common.Vec[int32], to *common.Vec[int32], err error) {
+	from = character.pos
+	to, err = character.FollowPath_StarA()
+	return from, to, err
+}
+
+func (w *Nation) moveCharacters(agentMap *Map[[]*Agent]) (err error) {
 	var character *Character
 	for _, character = range w.Characters {
-		_, err = character.FollowPath_StarA()
+		from, to, err := w.moveCharacter(character)
 		if err != nil {
 			return err
 		}
+		if to == nil {
+			continue
+		}
+		agents, _ := agentMap.GetCell(from)
+		if agents == nil {
+			agents = new([]*Agent)
+		}
+		*agents = slices.DeleteFunc(*agents, func(a *Agent) bool { return a.Id == character.Id })
+		agentMap.SetRawCell(agents, from)
+
+		agents, _ = agentMap.GetCell(*to)
+		if agents == nil {
+			agents = new([]*Agent)
+		}
+		*agents = append(*agents, &character.Agent)
+		agentMap.SetRawCell(agents, *to)
 	}
 	return nil
 }

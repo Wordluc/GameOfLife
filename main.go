@@ -170,7 +170,7 @@ func main() {
 		}
 		if rl.IsKeyPressed(rl.KeyC) {
 			if len(w.Nations) != 0 {
-				w.Nations[0].Characters = append(w.Nations[0].Characters, new(core.NewCharacter(0, getPosMouse())))
+				err = w.AddCharactersAt(getPosMouse(), 0)
 				if err != nil {
 					println(err.Error())
 				}

@@ -43,6 +43,10 @@ func (q *Queue[t]) Enqueue(values ...t) {
 	}
 }
 
+func (q *Queue[t]) Remaining() int {
+	return len(q.values) - q.index
+}
+
 func (q *Queue[t]) DenqueueN(n int) (values []t, end bool) {
 	if n < 0 || q.index+n+1 >= len(q.values) {
 		values = q.values[q.index:]

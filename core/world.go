@@ -65,9 +65,8 @@ func (w *World) toRunPathFindingForAll() {
 type From = common.Vec[int32]
 type To = common.Vec[int32]
 
-var cachedPath map[From]map[To][]common.Vec[int32] = map[From]map[To][]common.Vec[int32]{}
-
 func (w *World) setNewPathFinding(people ...*Agent) {
+	var cachedPath map[From]map[To][]common.Vec[int32] = map[From]map[To][]common.Vec[int32]{}
 	var person *Agent
 	var cellTypeToGo CellType
 	var posCellsCouldGo []common.Vec[int32]
@@ -100,6 +99,7 @@ func (w *World) setNewPathFinding(people ...*Agent) {
 			goal, end = goals.Denqueue()
 			if end {
 				person.Status = IDLE
+				w.personNeedingPathFinding.Enqueue(person)
 				break
 			}
 			if goal.IsEqual(person.pos) {
@@ -189,19 +189,6 @@ func (w *World) AddBlock(cellType CellType, pos common.Vec[int32], size common.V
 			return err
 		}
 	}
-	t := make(map[From]map[To][]common.Vec[int32])
-	for from, paths := range cachedPath {
-		for to, path := range paths {
-			if slices.ContainsFunc(path, func(a common.Vec[int32]) bool { return neighborhood[a] != nil }) {
-				continue
-			}
-			if t[from] == nil {
-				t[from] = map[To][]common.Vec[int32]{}
-			}
-			t[from][to] = cachedPath[from][to]
-		}
-	}
-	cachedPath = t
 	w.toRunPathFindingForAll()
 	return nil
 }
@@ -219,12 +206,12 @@ func (w *World) GetCellsByType(cellType CellType) (res []*BaseCell, err error) {
 }
 
 func (w *World) PerformPathFinding() {
-	ps, end := w.personNeedingPathFinding.DenqueueN(10)
+	ps, _ := w.personNeedingPathFinding.DenqueueN(10)
 	if ps == nil {
 		return
 	}
 	w.setNewPathFinding(ps...)
-	if end {
+	if w.personNeedingPathFinding.Remaining() <= 0 {
 		w.personNeedingPathFinding.Reset()
 	}
 }
@@ -246,49 +233,30 @@ func (w *World) NewPerson(job Job, where common.Vec[int32], idNation ID_NATION) 
 	}
 	p := w.Nations[idNation].newAgent(job, where)
 	w.toRunPathFinding(p)
+	agents, _ := w.agentsMap.GetCell(where)
+	if agents == nil {
+		agents = new([]*Agent)
+	}
+	*agents = append(*agents, p)
+	w.agentsMap.SetRawCell(agents, where)
 	return p
 }
 
 func (w *World) MovementSimulation() (err error) {
-	w.agentsMap = new(NewMap[[]*Agent](w.agentsMap.size))
+	w.toRunPathFindingForAll()
 	for _, nation := range w.Nations {
-		err = nation.movePeople()
+		err = nation.movePeople(w.agentsMap)
 		if err != nil {
 			return err
 		}
-		err = nation.moveCharacters()
+		err = nation.moveCharacters(w.agentsMap)
 		if err != nil {
 			return err
-		}
-		for pos, agents := range nation.PosToAgents {
-			a, _ := w.agentsMap.GetCell(pos)
-			if a == nil {
-				a = &[]*Agent{}
-			}
-			*a = append(agents, *a...)
-			w.agentsMap.SetRawCell(a, pos)
-
-		}
-		for _, character := range nation.Characters {
-			preExistingAgents, _ := w.agentsMap.GetCell(character.pos)
-			if preExistingAgents == nil {
-				preExistingAgents = &[]*Agent{}
-			}
-			*preExistingAgents = append(*preExistingAgents, &character.Agent)
-			w.agentsMap.SetRawCell(preExistingAgents, character.pos)
 		}
 	}
-	err = w.Zombies.moveZombies()
+	err = w.Zombies.moveZombies(w.agentsMap)
 	if err != nil {
 		return err
-	}
-	for pos, agents := range w.Zombies.PosToAgents {
-		a, _ := w.agentsMap.GetCell(pos)
-		if a == nil {
-			a = &[]*Agent{}
-		}
-		agents = append(agents, *a...)
-		w.agentsMap.SetRawCell(new(agents), pos)
 	}
 	return nil
 }
@@ -370,6 +338,23 @@ func (w *World) ZombieEat() error {
 
 		w.zombieEatAgent(population[i], pos)
 	}
+	return nil
+}
+
+func (w *World) AddCharactersAt(pos common.Vec[int32], idNation ID_NATION) error {
+	if int(idNation) >= len(w.Nations) {
+		return errors.New("Missing nation")
+	}
+	character := new(NewCharacter(0, pos))
+	w.Nations[idNation].Characters = append(w.Nations[idNation].Characters, character)
+	res, _ := w.agentsMap.GetCell(pos)
+	if res == nil {
+		res = new([]*Agent{})
+	}
+	*res = append(*res, &character.Agent)
+	w.agentsMap.SetRawCell(res, pos)
+
+	w.toRunPathFindingForAll()
 	return nil
 }
 
