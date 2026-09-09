@@ -49,7 +49,7 @@ func (r *RaylibRender) DrawCell(x, y int32, w *core.World) error {
 	var people int
 	var playable int
 	for _, nation := range w.Nations {
-		people += len(nation.GetAgentsAt(pos, func(a *core.Agent) bool { return a.Status != core.DEAD }))
+		people += len(nation.GetAgentsAt(pos, func(a *core.Pawn) bool { return a.Status() != core.DEAD }))
 		playable += len(nation.GetCharactersAt(pos))
 	}
 	zombie := len(w.Zombies.GetAgentsAt(pos, nil))

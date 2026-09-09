@@ -5,82 +5,106 @@ import (
 	"slices"
 )
 
+type Zombie struct {
+	agentCore
+}
+
+func newZombie(where common.Vec[int32]) *Zombie {
+	return &Zombie{
+		agentCore: newAgentCore(where),
+	}
+}
+
+func isZombie(a Agent) bool {
+	_, ok := a.(*Zombie)
+	return ok
+}
+
 type ZombieHorde struct {
-	AgentGroup
+	AgentGroup[*Zombie]
 	BfsMap Map[int16]
 }
 
 func NewZombieHorde(w *World) ZombieHorde {
 	var horde ZombieHorde
 	horde = ZombieHorde{
-		AgentGroup: AgentGroup{
+		AgentGroup: AgentGroup[*Zombie]{
 			world:       w,
-			PosToAgents: map[common.Vec[int32]][]*Agent{},
-			agents:      common.NewSortSlice(func(a, b *Agent) int { return int(a.Id) - int(b.Id) }),
+			PosToAgents: map[common.Vec[int32]][]*Zombie{},
+			agents:      common.NewSortSlice(func(a, b *Zombie) int { return int(a.Id()) - int(b.Id()) }),
 		},
 		BfsMap: NewMap[int16](w.CellMap.size),
 	}
 	return horde
 }
 
-func (horde *ZombieHorde) moveZombies(agentMap *Map[[]*Agent]) (err error) {
-	var person *Agent
-	for _, person = range slices.Clone(horde.agents.GetAll()) {
-		from, to, err := horde.moveZombie(person)
+func (horde *ZombieHorde) newZombie(where common.Vec[int32]) *Zombie {
+	zombie := newZombie(where)
+	horde.insertAgent(zombie, where)
+	return zombie
+}
+
+func (horde *ZombieHorde) addZombie(pawn *Pawn, spawnAt common.Vec[int32]) (*Zombie, error) {
+	if pawn.Paths() != nil {
+		cell, _ := horde.world.CellMap.GetCell(*pawn.Paths().GetLast())
+		cell.VirtualNPopulation--
+	}
+	pawn.SetStatus(MOVING)
+	pawn.SetPaths(nil)
+	pawn.SetPos(spawnAt)
+	zombie := &Zombie{agentCore: pawn.agentCore}
+	horde.insertAgent(zombie, spawnAt)
+	return zombie, nil
+}
+
+func (horde *ZombieHorde) moveZombies() (err error) {
+	var zombie *Zombie
+	for _, zombie = range slices.Clone(horde.agents.GetAll()) {
+		from, to, err := horde.moveZombie(zombie)
 		if err != nil {
 			return err
 		}
 		if to == nil {
 			continue
 		}
-		agents, _ := agentMap.GetCell(from)
-		if agents == nil {
-			agents = new([]*Agent)
-		}
-		*agents = slices.DeleteFunc(*agents, func(a *Agent) bool { return a.Id == person.Id })
-		agentMap.SetRawCell(agents, from)
-
-		agents, _ = agentMap.GetCell(*to)
-		if agents == nil {
-			agents = new([]*Agent)
-		}
-		agentMap.SetRawCell(new(append(*agents, person)), *to)
+		horde.world.removeFromAgentsMap(zombie, &from)
+		horde.world.addToAgentsMap(zombie, to)
 	}
 	return nil
 }
 
-func (horde *ZombieHorde) moveZombie(person *Agent) (from common.Vec[int32], to *common.Vec[int32], err error) {
-	from = person.pos
-	neighborhood, _ := horde.BfsMap.GetNeighborhoodCells(person.pos, common.Vec[int32]{X: 3, Y: 3})
+func (horde *ZombieHorde) moveZombie(zombie *Zombie) (from common.Vec[int32], to *common.Vec[int32], err error) {
+	from = zombie.Pos()
+	neighborhood, _ := horde.BfsMap.GetNeighborhoodCells(zombie.Pos(), common.Vec[int32]{X: 3, Y: 3})
 	if neighborhood == nil {
 		return from, to, nil
 	}
 
-	cost := neighborhood[person.pos]
-	delete(neighborhood, person.pos)
+	cost := neighborhood[zombie.Pos()]
+	delete(neighborhood, zombie.Pos())
 	for pos := range neighborhood {
 		if *cost < 0 {
 			delete(neighborhood, pos)
 		}
 		if *neighborhood[pos] < *cost {
-			if len(horde.world.GetAgentsAt(pos, false)) != 0 {
+			if len(horde.world.GetAgentsAt(pos, nil, false)) != 0 {
 				continue
 			}
 			if len(horde.world.GetCharactersAt(pos, nil)) != 0 {
 				continue
 			}
-			horde.PosToAgents[person.pos] = slices.DeleteFunc(horde.PosToAgents[person.pos], func(a *Agent) bool { return person.Id == a.Id })
-			horde.PosToAgents[pos] = append(horde.PosToAgents[pos], person)
-			person.pos = pos
-			return from, &person.pos, nil
+			horde.PosToAgents[zombie.Pos()] = slices.DeleteFunc(horde.PosToAgents[zombie.Pos()], func(a *Zombie) bool { return zombie.Id() == a.Id() })
+			horde.PosToAgents[pos] = append(horde.PosToAgents[pos], zombie)
+			zombie.SetPos(pos)
+			return from, &zombie.agentCore.pos, nil
 		}
 	}
 	//RANDOM MOVEMENT
 	for key := range neighborhood {
-		if *neighborhood[key] == *cost && !key.IsEqual(person.pos) {
-			horde.PosToAgents[person.pos] = slices.DeleteFunc(horde.PosToAgents[person.pos], func(a *Agent) bool { return person.Id == a.Id })
-			horde.PosToAgents[key] = append(horde.PosToAgents[key], person)
-			person.pos = key
+		if *neighborhood[key] == *cost && !key.IsEqual(zombie.Pos()) {
+			horde.PosToAgents[zombie.Pos()] = slices.DeleteFunc(horde.PosToAgents[zombie.Pos()], func(a *Zombie) bool { return zombie.Id() == a.Id() })
+			horde.PosToAgents[key] = append(horde.PosToAgents[key], zombie)
+			zombie.SetPos(key)
 		}
 	}
 
@@ -94,7 +118,7 @@ func (z *ZombieHorde) refreshBfsMap(starts []common.Vec[int32]) error {
 				return false
 			}
 			agents, _ := z.world.agentsMap.GetCell(pos)
-			if agents != nil && len(*agents) != 0 && slices.ContainsFunc(*agents, func(a *Agent) bool { return a.Job != ZOMBIE }) {
+			if agents != nil && len(*agents) != 0 && slices.ContainsFunc(*agents, func(a Agent) bool { return !isZombie(a) }) {
 				return false
 			}
 		}
@@ -104,19 +128,5 @@ func (z *ZombieHorde) refreshBfsMap(starts []common.Vec[int32]) error {
 		return err
 	}
 	z.BfsMap = m
-	return nil
-}
-
-func (z *ZombieHorde) addZombie(agent *Agent, spawnAt common.Vec[int32]) error {
-	if agent.paths != nil {
-		cell, _ := z.world.CellMap.GetCell(*agent.paths.GetLast())
-		cell.VirtualNPopulation--
-	}
-	agent.Status = MOVING
-	agent.paths = nil
-	agent.Job = ZOMBIE
-	agent.pos = spawnAt
-	agent.IdNation = -1
-	z.addAgent(agent, agent.pos)
 	return nil
 }
