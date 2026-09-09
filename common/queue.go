@@ -43,6 +43,20 @@ func (q *Queue[t]) Enqueue(values ...t) {
 	}
 }
 
+func (q *Queue[t]) EnqueueUnique(values ...t) {
+	for _, v := range values {
+		pending := q.values[q.index:]
+		idx, found := slices.BinarySearchFunc(pending, v, q.cmp)
+		if found {
+			continue
+		}
+		insertAt := q.index + idx
+		q.values = append(q.values, *new(t))
+		copy(q.values[insertAt+1:], q.values[insertAt:])
+		q.values[insertAt] = v
+	}
+}
+
 func (q *Queue[t]) Remaining() int {
 	return len(q.values) - q.index
 }

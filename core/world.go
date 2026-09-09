@@ -38,7 +38,7 @@ func NewWorld(size common.Vec[int32]) (w *World) {
 	w.agentsMap = new(NewMap[[]*Agent](size))
 	w.Nations = map[ID_NATION]*Nation{}
 	w.cellType_ToPosCell = make(bindingCellTypeToCell)
-	w.personNeedingPathFinding = common.NewQueue[*Agent](nil, nil)
+	w.personNeedingPathFinding = common.NewQueue[*Agent](nil, func(a, b *Agent) int { return int(a.Id) - int(b.Id) })
 	w.Zombies = new(NewZombieHorde(w))
 	return w
 }
@@ -53,12 +53,12 @@ func (w *World) GenerateMap() {
 }
 
 func (w *World) toRunPathFinding(ps ...*Agent) {
-	w.personNeedingPathFinding.Enqueue(ps...)
+	w.personNeedingPathFinding.EnqueueUnique(ps...)
 }
 
 func (w *World) toRunPathFindingForAll() {
 	for i := range w.IdNations {
-		w.personNeedingPathFinding.Enqueue(w.Nations[w.IdNations[i]].agents.GetAll()...)
+		w.personNeedingPathFinding.EnqueueUnique(w.Nations[w.IdNations[i]].agents.GetAll()...)
 	}
 }
 
